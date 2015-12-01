@@ -1,0 +1,24 @@
+{
+    "appKeys": {},
+    "capabilities": [
+        "location",
+        "configurable"
+    ],
+    "companyName": "Yuriy Galanter",
+    "longName": "Pebstyle",
+    "projectType": "native",
+    "resources": {
+        "media": []
+    },
+    "sdkVersion": "3",
+    "shortName": "Pebstyle",
+    "targetPlatforms": [
+        "aplite",
+        "basalt"
+    ],
+    "uuid": "da05e84d-e2a2-4020-a2dc-9cdcf265fcdd",
+    "versionLabel": "1.0",
+    "watchapp": {
+        "watchface": true
+    }
+}
