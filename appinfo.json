@@ -8,7 +8,43 @@
     "longName": "Pebstyle",
     "projectType": "native",
     "resources": {
-        "media": []
+        "media": [
+            {
+                "file": "images/bw_bluetooth-24-disconnected.png",
+                "name": "BT_DISCONNECTED",
+                "targetPlatforms": [
+                    "aplite",
+                    "basalt"
+                ],
+                "type": "png"
+            },
+            {
+                "file": "images/bw_bluetooth-24-connected.png",
+                "name": "BT_CONNECTED",
+                "targetPlatforms": [
+                    "aplite",
+                    "basalt"
+                ],
+                "type": "png"
+            },
+            {
+                "characterRegex": "[0-9:.]",
+                "file": "fonts/Big_Noodle_Titling_Cyr.ttf",
+                "name": "BIG_NOODLE_TILTING_24",
+                "type": "font"
+            },
+            {
+                "file": "fonts/Big_Noodle_Titling_Cyr.ttf",
+                "name": "BIG_NOODLE_TILTING_18",
+                "type": "font"
+            },
+            {
+                "characterRegex": "[0-9]",
+                "file": "fonts/Big_Noodle_Titling_Cyr.ttf",
+                "name": "BIG_NOODLE_TILTING_27",
+                "type": "font"
+            }
+        ]
     },
     "sdkVersion": "3",
     "shortName": "Pebstyle",
