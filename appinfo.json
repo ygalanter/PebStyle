@@ -1,5 +1,18 @@
 {
-    "appKeys": {},
+    "appKeys": {
+        "KEY_BLUETOOTH_ALERT": 2,
+        "KEY_CITY_NAME": 9,
+        "KEY_JSREADY": 6,
+        "KEY_LOCATION_SERVICE": 7,
+        "KEY_MAIN_CLOCK": 0,
+        "KEY_SECONDARY_INFO_TYPE": 10,
+        "KEY_SECOND_HAND": 1,
+        "KEY_TEMPERATURE_FORMAT": 8,
+        "KEY_TIMEZONE_NAME": 11,
+        "KEY_WEATHER_CODE": 3,
+        "KEY_WEATHER_INTERVAL": 5,
+        "KEY_WEATHER_TEMP": 4
+    },
     "capabilities": [
         "location",
         "configurable"
@@ -9,6 +22,23 @@
     "projectType": "native",
     "resources": {
         "media": [
+            {
+                "file": "images/meteocons_Yahoo_Order_V3-25x20px - Basalt Transparent PNG.png",
+                "name": "METEOICONS_BASALT_TRANSPARENT_PNG",
+                "targetPlatforms": [
+                    "basalt",
+                    "chalk"
+                ],
+                "type": "png"
+            },
+            {
+                "file": "images/meteocons_Yahoo_Order_V3-25x20px - Aplite Transparen PNG.png",
+                "name": "METEOICONS_APLITE_TRANSPARENT_PNG",
+                "targetPlatforms": [
+                    "aplite"
+                ],
+                "type": "png-trans"
+            },
             {
                 "file": "images/bw_bluetooth-24-disconnected.png",
                 "name": "BT_DISCONNECTED",
@@ -28,7 +58,6 @@
                 "type": "png"
             },
             {
-                "characterRegex": "[0-9:.]",
                 "file": "fonts/Big_Noodle_Titling_Cyr.ttf",
                 "name": "BIG_NOODLE_TILTING_24",
                 "type": "font"
@@ -42,6 +71,12 @@
                 "characterRegex": "[0-9]",
                 "file": "fonts/Big_Noodle_Titling_Cyr.ttf",
                 "name": "BIG_NOODLE_TILTING_27",
+                "type": "font"
+            },
+            {
+                "characterRegex": "[0-9:.]",
+                "file": "fonts/Big_Noodle_Titling_Cyr.ttf",
+                "name": "BIG_NOODLE_TILTING_65",
                 "type": "font"
             }
         ]
