@@ -3,12 +3,14 @@
         "KEY_BLUETOOTH_ALERT": 2,
         "KEY_CITY_NAME": 9,
         "KEY_JSREADY": 6,
+        "KEY_JS_TIMEZONE_OFFSET": 13,
         "KEY_LOCATION_SERVICE": 7,
         "KEY_MAIN_CLOCK": 0,
         "KEY_SECONDARY_INFO_TYPE": 10,
         "KEY_SECOND_HAND": 1,
         "KEY_TEMPERATURE_FORMAT": 8,
         "KEY_TIMEZONE_NAME": 11,
+        "KEY_TIME_SEPARATOR": 12,
         "KEY_WEATHER_CODE": 3,
         "KEY_WEATHER_INTERVAL": 5,
         "KEY_WEATHER_TEMP": 4
@@ -18,10 +20,16 @@
         "configurable"
     ],
     "companyName": "Yuriy Galanter",
-    "longName": "Pebstyle",
+    "longName": "Cobblestyle",
     "projectType": "native",
     "resources": {
         "media": [
+            {
+                "file": "images/iconbw.png",
+                "menuIcon": true,
+                "name": "MENU",
+                "type": "png"
+            },
             {
                 "file": "images/meteocons_Yahoo_Order_V3-25x20px - Basalt Transparent PNG.png",
                 "name": "METEOICONS_BASALT_TRANSPARENT_PNG",
@@ -82,13 +90,13 @@
         ]
     },
     "sdkVersion": "3",
-    "shortName": "Pebstyle",
+    "shortName": "Cobblestyle",
     "targetPlatforms": [
         "aplite",
         "basalt"
     ],
     "uuid": "da05e84d-e2a2-4020-a2dc-9cdcf265fcdd",
-    "versionLabel": "1.0",
+    "versionLabel": "1.22",
     "watchapp": {
         "watchface": true
     }

@@ -44,6 +44,13 @@
   #define SECONDARY_INFO_CURRENT_LOCATION 2
   //otherwise - timezone offset
 
+#define KEY_TIME_SEPARATOR 12
+  
+  #define TIME_SEPARATOR_COLON 0
+  #define TIME_SEPARATOR_DOT 1
+
+#define KEY_JS_TIMEZONE_OFFSET 13
+
 //icons
 #define ICON_WIDTH  25
 #define ICON_HEIGHT 20

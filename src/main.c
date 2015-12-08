@@ -17,6 +17,7 @@ char s_timezone_name[25]; // test
 char s_temp[6]; //test 
 
 int flag_main_clock, flag_second_hand, flag_bluetooth_alert, flag_locationService, flag_weatherInterval, flag_secondary_info_type;
+int flag_time_separator, flag_js_timezone_offset;
 bool is_bluetooth_buzz_enabled = false, flag_messaging_is_busy = false, flag_js_is_ready = false;;
 
 GBitmap *meteoicons_all, *meteoicon_current;
@@ -25,7 +26,7 @@ GBitmap *meteoicons_all, *meteoicon_current;
 static void update_weather() {
   // Only grab the weather if we can talk to phone AND weather is enabled AND currently message is not being processed and JS on phone is ready
   if (flag_locationService != LOCATION_DISABLED && bluetooth_connection_service_peek() && !flag_messaging_is_busy && flag_js_is_ready) {
-    // APP_LOG(APP_LOG_LEVEL_INFO, "**** I am inside 'update_weather()' about to request weather from the phone ***");
+    //APP_LOG(APP_LOG_LEVEL_INFO, "**** I am inside 'update_weather()' about to request weather from the phone ***");
     
     //need to have some data - sending dummy
     DictionaryIterator *iter;
@@ -37,13 +38,13 @@ static void update_weather() {
     
      flag_messaging_is_busy = true;
      int msg_result = app_message_outbox_send(); // need to assign result for successfull call
-     // APP_LOG(APP_LOG_LEVEL_INFO, "**** I am inside 'update_weather()' message sent and result code = %d***", msg_result);
+     //APP_LOG(APP_LOG_LEVEL_INFO, "**** I am inside 'update_weather()' message sent and result code = %d***", msg_result);
   } 
 }
 
 // showing temp
 static void set_temperature(int w_current) {
-    // APP_LOG(APP_LOG_LEVEL_INFO, "**** I am inside 'show_temperature()'; TEMP in Pebble: %d", w_current);
+    //APP_LOG(APP_LOG_LEVEL_INFO, "**** I am inside 'show_temperature()'; TEMP in Pebble: %d", w_current);
     snprintf(s_temp, sizeof(s_temp), "%i\u00B0", w_current);
     layer_mark_dirty(s_info_layer);
 }
@@ -52,7 +53,7 @@ static void set_temperature(int w_current) {
 static void set_weather_icon(int w_icon) {
    if (meteoicon_current)  gbitmap_destroy(meteoicon_current);
    meteoicon_current = gbitmap_create_as_sub_bitmap(meteoicons_all, GRect(0, ICON_HEIGHT*w_icon, ICON_WIDTH, ICON_HEIGHT)); 
-   // APP_LOG(APP_LOG_LEVEL_INFO, "**** I am inside 'set_weather_icon'; Icon IS: %d", w_icon);
+   //APP_LOG(APP_LOG_LEVEL_INFO, "**** I am inside 'set_weather_icon'; Icon IS: %d", w_icon);
    layer_mark_dirty(s_info_layer);
 }
 
@@ -68,7 +69,7 @@ static void battery_handler(BatteryChargeState state) {
 void bluetooth_handler(bool connected) {
   
   if (connected){ // on bluetooth reconnect - update weather
-    // APP_LOG(APP_LOG_LEVEL_INFO, "***** I am inside of 'bluetooth_handler()' about to call 'update_weather();");
+    //APP_LOG(APP_LOG_LEVEL_INFO, "***** I am inside of 'bluetooth_handler()' about to call 'update_weather();");
     update_weather();
   } 
   
@@ -259,19 +260,27 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
  
   
    char format[5];
+   char large_ampm[] = "am";
      
-   // building format 12h/24h
-   if (clock_is_24h_style()) {
-      strcpy(format, "%H:%M"); // e.g "14:46"
-   } else {
-      strcpy(format, "%l:%M"); // e.g " 2:46" -- with leading space
-   }
-   
-   strftime(s_time, sizeof(s_time), format, t);
-   
   {//************************ drawing large text time **************************** 
   
    if (flag_main_clock == MAIN_CLOCK_DIGITAL) { // only displaying large text time if main mode is digital
+     
+     // building format 12h/24h
+     if (clock_is_24h_style()) {
+        strcpy(format, "%H:%M"); // e.g "14:46"
+     } else {
+        strcpy(format, "%l:%M"); // e.g " 2:46" -- with leading space
+       
+        if (flag_time_separator == TIME_SEPARATOR_DOT) format[2] = '.';
+       
+         strftime(large_ampm, sizeof(large_ampm), "%P", t);
+         graphics_draw_text(ctx, large_ampm, font_24, GRect(bounds.origin.x,bounds.size.h - 130 , bounds.size.w, 30), GTextOverflowModeFill, GTextAlignmentCenter, NULL);
+       
+     }
+   
+     strftime(s_time, sizeof(s_time), format, t);
+     
      graphics_draw_text(ctx, s_time, font_90, GRect(bounds.origin.x,bounds.origin.y + 55 , bounds.size.w, 70), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL); 
    }
     
@@ -287,14 +296,38 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
        graphics_draw_text(ctx, s_city_name, font_24, GRect(bounds.origin.x,bounds.size.h - 27 , bounds.size.w, 30), GTextOverflowModeFill, GTextAlignmentCenter, NULL);
        break;
      case SECONDARY_INFO_CURRENT_TIME:
+       // building format 12h/24h
+       if (clock_is_24h_style()) {
+          strcpy(format, "%H:%M"); // e.g "14:46"
+       } else {
+          strcpy(format, "%l:%M %P"); // e.g " 2:46 PM" -- with leading space
+       }
+     
+       if (flag_time_separator == TIME_SEPARATOR_DOT) format[2] = '.';
+   
+       strftime(s_time, sizeof(s_time), format, t);
+     
        graphics_draw_text(ctx, s_time, font_24, GRect(bounds.origin.x,bounds.size.h - 27 , bounds.size.w, 30), GTextOverflowModeFill, GTextAlignmentCenter, NULL);    
        break;
      default: // displaying time in different timezone
-       now += flag_secondary_info_type * 60;
+       now  += flag_secondary_info_type * 60;
+       #ifdef PBL_SDK_2
+       now += flag_js_timezone_offset*60; // since in SDK2 time() returns epoch in local time - need adjustments from JS
+       #endif
        t = gmtime(&now);
      
        strcpy(s_city_name, s_timezone_name); //prepending with timezone name
        s_city_name[3]=' ';
+       
+       // building format 12h/24h
+       if (clock_is_24h_style()) {
+          strcpy(format, "%H:%M"); // e.g "14:46"
+       } else {
+          strcpy(format, "%l:%M %P"); // e.g " 2:46 PM" -- with leading space
+       }   
+     
+       if (flag_time_separator == TIME_SEPARATOR_DOT) format[2] = '.';
+     
        strftime(&s_city_name[4], sizeof(s_city_name), format, t); //adding timezone time
        
        graphics_draw_text(ctx, s_city_name, font_24, GRect(bounds.origin.x,bounds.size.h - 27 , bounds.size.w, 30), GTextOverflowModeFill, GTextAlignmentCenter, NULL);
@@ -315,8 +348,8 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
 
 static void handle_second_tick(struct tm *tick_time, TimeUnits units_changed) {
   
-  if (!(tick_time->tm_min % flag_weatherInterval)) { // on configured weather interval change - update the weather
-        // APP_LOG(APP_LOG_LEVEL_INFO, "**** I am inside 'tick_handler()' about to call 'update_weather();' at minute %d min on %d interval", tick_time->tm_min, flag_weatherInterval);
+  if (!(tick_time->tm_min % flag_weatherInterval) && (tick_time->tm_sec == 0)) { // on configured weather interval change - update the weather
+        //APP_LOG(APP_LOG_LEVEL_INFO, "**** I am inside 'tick_handler()' about to call 'update_weather();' at minute %d min on %d interval", tick_time->tm_min, flag_weatherInterval);
         update_weather();
   } 
   
@@ -367,7 +400,7 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
       case KEY_JSREADY:
           // JS ready lets get the weather
           if (t->value->int16) {
-            // APP_LOG(APP_LOG_LEVEL_INFO, "***** I am inside of 'inbox_received_callback()' message 'JS is ready' received !");
+            //APP_LOG(APP_LOG_LEVEL_INFO, "***** I am inside of 'inbox_received_callback()' message 'JS is ready' received !");
             flag_js_is_ready = true;
             need_weather = 1;
           }
@@ -375,7 +408,7 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
       
         // config keys
        case KEY_TEMPERATURE_FORMAT: //if temp format changed from F to C or back - need re-request weather
-         // APP_LOG(APP_LOG_LEVEL_INFO, "***** I am inside of 'inbox_received_callback()' switching temp format");
+         //APP_LOG(APP_LOG_LEVEL_INFO, "***** I am inside of 'inbox_received_callback()' switching temp format");
          need_weather = 1;
          break;
      
@@ -404,7 +437,7 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
              persist_write_int(KEY_LOCATION_SERVICE, t->value->int32);
              flag_locationService = t->value->int32;
              need_weather = 1;
-             // APP_LOG(APP_LOG_LEVEL_INFO, "***** I am inside of 'inbox_received_callback()' location set to %d type", flag_locationService);
+             //APP_LOG(APP_LOG_LEVEL_INFO, "***** I am inside of 'inbox_received_callback()' location set to %d type", flag_locationService);
            }  
            break;
         case KEY_WEATHER_INTERVAL:
@@ -412,7 +445,7 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
              persist_write_int(KEY_WEATHER_INTERVAL, t->value->int32);
              flag_weatherInterval = t->value->int32;
              need_weather = 1;
-             // APP_LOG(APP_LOG_LEVEL_INFO, "***** I am inside of 'inbox_received_callback()' Weather interval set to interval to %d min", flag_weatherInterval);
+             //APP_LOG(APP_LOG_LEVEL_INFO, "***** I am inside of 'inbox_received_callback()' Weather interval set to interval to %d min", flag_weatherInterval);
            }
            break;
       
@@ -425,7 +458,15 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
                persist_write_int(KEY_SECONDARY_INFO_TYPE, t->value->int32);
                flag_secondary_info_type = t->value->int32;
                break;
-        
+      
+          case KEY_TIME_SEPARATOR:
+               persist_write_int(KEY_TIME_SEPARATOR, t->value->int32);
+               flag_time_separator = t->value->int32;
+               break;
+          case KEY_JS_TIMEZONE_OFFSET:
+               persist_write_int(KEY_JS_TIMEZONE_OFFSET, t->value->int32);
+               flag_js_timezone_offset = t->value->int32;
+               break;
 
            break;
       
@@ -436,7 +477,7 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
   }
   
   if (need_weather == 1) {
-    // APP_LOG(APP_LOG_LEVEL_INFO, "***** I am inside of 'inbox_received_callback()' about to call 'update_weather();");
+    //APP_LOG(APP_LOG_LEVEL_INFO, "***** I am inside of 'inbox_received_callback()' about to call 'update_weather();");
     update_weather();
   }
 
@@ -444,17 +485,17 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
 
 static void inbox_dropped_callback(AppMessageResult reason, void *context) {
   flag_messaging_is_busy = false;
-  // APP_LOG(APP_LOG_LEVEL_ERROR, "____Message dropped!");
+  //APP_LOG(APP_LOG_LEVEL_ERROR, "____Message dropped!");
 }
 
 static void outbox_failed_callback(DictionaryIterator *iterator, AppMessageResult reason, void *context) {
   flag_messaging_is_busy = false;
-  // APP_LOG(APP_LOG_LEVEL_ERROR, "____Outbox send failed!");
+  //APP_LOG(APP_LOG_LEVEL_ERROR, "____Outbox send failed!");
 }
 
 static void outbox_sent_callback(DictionaryIterator *iterator, void *context) {
   flag_messaging_is_busy = false;
-  // APP_LOG(APP_LOG_LEVEL_INFO, "_____Outbox send success!");
+  //APP_LOG(APP_LOG_LEVEL_INFO, "_____Outbox send success!");
 } 
 
 
@@ -521,6 +562,8 @@ static void init() {
   flag_locationService = persist_exists(KEY_LOCATION_SERVICE)? persist_read_int(KEY_LOCATION_SERVICE) : LOCATION_AUTOMATIC;
   flag_weatherInterval = persist_exists(KEY_WEATHER_INTERVAL)? persist_read_int(KEY_WEATHER_INTERVAL) : 60; // default weather update is 1 hour
   flag_secondary_info_type = persist_exists(KEY_SECONDARY_INFO_TYPE)? persist_read_int(KEY_SECONDARY_INFO_TYPE) : SECONDARY_INFO_CURRENT_TIME;
+  flag_time_separator = persist_exists(KEY_TIME_SEPARATOR)? persist_read_int(KEY_TIME_SEPARATOR) : TIME_SEPARATOR_COLON;
+  flag_js_timezone_offset = persist_exists(KEY_JS_TIMEZONE_OFFSET)? persist_read_int(KEY_JS_TIMEZONE_OFFSET) : 0;
   persist_exists(KEY_CITY_NAME)? persist_read_string(KEY_CITY_NAME, s_city_name, sizeof(s_city_name)) : snprintf(s_city_name, sizeof(s_city_name), "%s", "");
   persist_exists(KEY_TIMEZONE_NAME)? persist_read_string(KEY_TIMEZONE_NAME, s_timezone_name, sizeof(s_timezone_name)) : snprintf(s_timezone_name, sizeof(s_timezone_name), "%s", "");
   
@@ -531,14 +574,6 @@ static void init() {
     if (persist_exists(KEY_WEATHER_TEMP)) set_temperature(persist_read_int(KEY_WEATHER_TEMP));
   }
   
-  is_bluetooth_buzz_enabled = false;
-  bluetooth_connection_service_subscribe(bluetooth_handler);
-  bluetooth_handler(bluetooth_connection_service_peek());
-  is_bluetooth_buzz_enabled = true;  
-  
-  battery_state_service_subscribe(battery_handler);
-  battery_handler(battery_state_service_peek());
-  
   // Register callbacks
   app_message_register_inbox_received(inbox_received_callback);
   app_message_register_inbox_dropped(inbox_dropped_callback);
@@ -547,6 +582,15 @@ static void init() {
 
   // Open AppMessage
   app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum()); 
+  
+  is_bluetooth_buzz_enabled = false;
+  bluetooth_connection_service_subscribe(bluetooth_handler);
+  bluetooth_handler(bluetooth_connection_service_peek());
+  is_bluetooth_buzz_enabled = true;  
+  
+  battery_state_service_subscribe(battery_handler);
+  battery_handler(battery_state_service_peek());
+  
   
   //tick_timer_service_subscribe(SECOND_UNIT, handle_second_tick);
   change_time_tick_inteval();

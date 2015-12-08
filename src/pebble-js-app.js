@@ -9,18 +9,18 @@ function getWeather(woeid) {
   var city;
   
    var query = 'select item.condition, location.city from weather.forecast where woeid =  ' + woeid + ' and u="' + (current_settings.temperatureFormat === 0? 'f' : 'c') + '"';
-  //console.log ("++++ I am inside of 'getWeather()' preparing query:" + query);
+  //console.log ("\n++++ I am inside of 'getWeather()' preparing query:" + query);
   var url = 'https://query.yahooapis.com/v1/public/yql?q=' + encodeURIComponent(query) + '&format=json&env=store://datatables.org/alltableswithkeys';
-  //console.log ("++++ I am inside of 'getWeather()' preparing url:" + url);
+  //console.log ("\n++++ I am inside of 'getWeather()' preparing url:" + url);
   // Send request to Yahoo
   var xhr = new XMLHttpRequest();
   xhr.onload = function () {
     var json = JSON.parse(this.responseText);
     temperature = parseInt(json.query.results.channel.item.condition.temp);
-    //console.log  ("++++ I am inside of 'getWeather()' callback. Temperature is " + temperature);
+    //console.log  ("\n++++ I am inside of 'getWeather()' callback. Temperature is " + temperature);
     
     icon = parseInt(json.query.results.channel.item.condition.code);
-    //console.log  ("++++ I am inside of 'getWeather()' callback. Icon code: " + icon);
+    //console.log  ("\n++++ I am inside of 'getWeather()' callback. Icon code: " + icon);
     
     city = json.query.results.channel.location.city;
    
@@ -32,13 +32,13 @@ function getWeather(woeid) {
     };
     
     // Send to Pebble
-    //console.log  ("++++ I am inside of 'getWeather()' callback. About to send message to Pebble");
+    //console.log  ("\n++++ I am inside of 'getWeather()' callback. About to send message to Pebble");
     Pebble.sendAppMessage(dictionary,
     function(e) {
-      //console.log ("++++ I am inside of 'Pebble.sendAppMessage()' callback. Weather info sent to Pebble successfully!");
+      //console.log ("\n++++ I am inside of 'Pebble.sendAppMessage()' callback. Weather info sent to Pebble successfully!");
     },
     function(e) {
-      //console.log ("++++ I am inside of 'Pebble.sendAppMessage()' callback. Error sending weather info to Pebble!");
+      //console.log ("\n++++ I am inside of 'Pebble.sendAppMessage()' callback. Error sending weather info to Pebble! = " + JSON.stringify(e));
     }
     );
   };
@@ -56,15 +56,15 @@ function locationSuccess(pos) {
   
   var query = 'select * from geo.placefinder where text="' +
     pos.coords.latitude + ',' + pos.coords.longitude + '" and gflags="R"';
-  //console.log ("++++ I am inside of 'locationSuccess()' preparing query:" + query);
+  //console.log ("\n++++ I am inside of 'locationSuccess()' preparing query:" + query);
   var url = 'https://query.yahooapis.com/v1/public/yql?q=' + encodeURIComponent(query) + '&format=json';
-  //console.log ("++++ I am inside of 'locationSuccess()' preparing URL: " + url);
+  //console.log ("\n++++ I am inside of 'locationSuccess()' preparing URL: " + url);
   // Send request to Yahoo
   var xhr = new XMLHttpRequest();
   xhr.onload = function () {
     var json = JSON.parse(this.responseText);
     woeid = json.query.results.Result.woeid;
-    //console.log ("++++ I am inside of 'locationSuccess()', woeid received:" + woeid);
+    //console.log ("\n++++ I am inside of 'locationSuccess()', woeid received:" + woeid);
     getWeather(woeid);
   };
   xhr.open('GET', url);
@@ -76,7 +76,7 @@ function locationSuccess(pos) {
 
 
 function locationError(err) {
-  //console.log ("++++ I am inside of 'locationError: Error requesting location!");
+  //console.log ("\n++++ I am inside of 'locationError: Error requesting location!");
 }
 
 
@@ -110,38 +110,41 @@ Pebble.addEventListener('ready',
              locationService: 0,
              woeid: 0,
              secondaryInfoType: 1,
-             timeZoneName: ''
+             timeZoneName: '',
+             timeSeparator: 0 
          };
      }
     
-    //console.log ("++++ I am inside of 'Pebble.addEventListener('ready'): PebbleKit JS ready!");
+    //console.log ("\n++++ I am inside of 'Pebble.addEventListener('ready'): PebbleKit JS ready!");
     var dictionary = {
-        "KEY_JSREADY": 1
+      "KEY_JSREADY": 1
     };
 
     // Send to Pebble, so we can load units variable and send it back
-    //console.log ("++++ I am inside of 'Pebble.addEventListener('ready') about to send Ready message to phone");
-    Pebble.sendAppMessage(dictionary,
-      function(e) {
-        //console.log ("++++ I am inside of 'Pebble.sendAppMessage() callback: Ready notice sent to phone successfully!");
-      },
-      function(e) {
-        //console.log ("++++ I am inside of 'Pebble.sendAppMessage() callback: Error ready notice to Pebble!");
-      }
-    ); 
+    setTimeout(function() { // doing this on TIMEOUT! allowing JS to get ready
+        //console.log ("\n++++ I am inside of 'Pebble.addEventListener('ready') about to send Ready message to phone");
+        Pebble.sendAppMessage(dictionary,
+          function(e) {
+            //console.log ("\n++++ I am inside of 'Pebble.sendAppMessage() callback: Ready notice sent to phone successfully!");
+          },
+          function(e) {
+            //console.log ("\n++++ I am inside of 'Pebble.sendAppMessage() callback: Error ready notice to Pebble! = " +  JSON.stringify(e));
+          }
+        ); 
+    }, 2000); 
   }
 );
 
 // Listen for when an AppMessage is received
 Pebble.addEventListener('appmessage',
   function(e) {
-    //console.log ("++++ I am inside of 'Pebble.addEventListener('appmessage'): AppMessage received");
+    //console.log ("\n++++ I am inside of 'Pebble.addEventListener('appmessage'): AppMessage received");
     
     if (current_settings.locationService == 1) { // for manual location - request weather right away
-        //console.log ("++++ I am inside of 'Pebble.addEventListener('appmessage'): Requesting weather by WOEID");
+        //console.log ("\n++++ I am inside of 'Pebble.addEventListener('appmessage'): Requesting weather by WOEID");
         getWeather(current_settings.woeid);
     } else {
-       //console.log ("++++ I am inside of 'Pebble.addEventListener('appmessage'): Requesting automatic location");
+       //console.log ("\n++++ I am inside of 'Pebble.addEventListener('appmessage'): Requesting automatic location");
        getLocation();  // for automatic location - get location
     }
     
@@ -163,14 +166,14 @@ Pebble.addEventListener("showConfiguration",
 Pebble.addEventListener("webviewclosed",
   function(e) {
     
-    if (e.response !== '') {
+    if (e.response !== '' && e.respnse != 'undefined' && e.response != 'CANCELLED') {
       
-      console.log('resonse: ' + decodeURIComponent(e.response));
+      //console.log('resonse: ' + decodeURIComponent(e.response));
       
       //Get JSON dictionary
       var settings = JSON.parse(decodeURIComponent(e.response));
       
-      console.log(settings);
+      //console.log(settings);
       
             
       
@@ -185,7 +188,10 @@ Pebble.addEventListener("webviewclosed",
       app_message_json.KEY_WEATHER_INTERVAL = settings.weatherInterval;
       app_message_json.KEY_SECONDARY_INFO_TYPE = settings.secondaryInfoType;
       app_message_json.KEY_TIMEZONE_NAME = settings.timeZoneName;
+      app_message_json.KEY_TIME_SEPARATOR = settings.timeSeparator;
+      app_message_json.KEY_JS_TIMEZONE_OFFSET = new Date().getTimezoneOffset(); // for SDK2 - add current timezone offset since C's time() returns local
       
+            
       // only storing and passing to pebble temperature format if it changed, because it will cause Pebble to reissue weather AJAX
       if (current_settings.temperatureFormat != settings.temperatureFormat) {
         app_message_json.KEY_TEMPERATURE_FORMAT = settings.temperatureFormat;
@@ -195,13 +201,13 @@ Pebble.addEventListener("webviewclosed",
       localStorage.setItem('current_settings', JSON.stringify(settings));
       current_settings = settings;
       
-      //console.log ("++++ I am inside of 'Pebble.addEventListener(webviewclosed). About to send settings to the phone");
+      //console.log ("\n++++ I am inside of 'Pebble.addEventListener(webviewclosed). About to send settings to the phone");
       Pebble.sendAppMessage(app_message_json,
         function(e) {
-          //console.log ("++++ I am inside of 'Pebble.addEventListener(webviewclosed) callback' Data sent to phone successfully!");
+          //console.log ("\n++++ I am inside of 'Pebble.addEventListener(webviewclosed) callback' Data sent to phone successfully!");
         },
         function(e) {
-          //console.log ("++++ I am inside of 'Pebble.addEventListener(webviewclosed) callback' Data sent to phone failed!");
+          //console.log ("\n++++ I am inside of 'Pebble.addEventListener(webviewclosed) callback' Data sent to phone failed! = " +  JSON.stringify(e));
         }
      );
       
