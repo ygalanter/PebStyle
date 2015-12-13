@@ -1,3 +1,4 @@
+var version = '1.232';
 var current_settings;
 
 /*  ****************************************** Weather Section **************************************************** */
@@ -111,7 +112,13 @@ Pebble.addEventListener('ready',
              woeid: 0,
              secondaryInfoType: 1,
              timeZoneName: '',
-             timeSeparator: 0 
+             timeSeparator: 0,
+             sidebarLocation: 0,
+             colorSelection: 0,
+             mainBgColor: 192,
+             mainColor: 255,
+             sidebarBgColor: 254,
+             sidebarColor: 192
          };
      }
     
@@ -156,9 +163,19 @@ Pebble.addEventListener('appmessage',
 
 Pebble.addEventListener("showConfiguration",
   function(e) {
+    
+    //getting platform
+    var platform;
+    if(Pebble.getActiveWatchInfo) {
+      // Available for use!
+      platform = Pebble.getActiveWatchInfo().platform;
+    } else {
+      // Not available, handle gracefully
+      platform = 'aplite';
+    }
    
     //Load the remote config page
-    Pebble.openURL("http://codecorner.galanter.net/pebble/pebstyle_config.html");
+    Pebble.openURL("http://codecorner.galanter.net/pebble/pebstyle_config.html?version=" + version + "&platform=" + platform);
     
   }
 );
@@ -190,6 +207,12 @@ Pebble.addEventListener("webviewclosed",
       app_message_json.KEY_TIMEZONE_NAME = settings.timeZoneName;
       app_message_json.KEY_TIME_SEPARATOR = settings.timeSeparator;
       app_message_json.KEY_JS_TIMEZONE_OFFSET = new Date().getTimezoneOffset(); // for SDK2 - add current timezone offset since C's time() returns local
+      app_message_json.KEY_SIDEBAR_LOCATION = settings.sidebarLocation;
+      app_message_json.KEY_MAIN_BG_COLOR = settings.mainBgColor;
+      app_message_json.KEY_MAIN_COLOR = settings.mainColor;
+      app_message_json.KEY_SIDEBAR_BG_COLOR = settings.sidebarBgColor;
+      app_message_json.KEY_SIDEBAR_COLOR = settings.sidebarColor;
+      app_message_json.KEY_COLOR_SELECTION = settings.colorSelection;
       
             
       // only storing and passing to pebble temperature format if it changed, because it will cause Pebble to reissue weather AJAX
@@ -202,15 +225,16 @@ Pebble.addEventListener("webviewclosed",
       current_settings = settings;
       
       //console.log ("\n++++ I am inside of 'Pebble.addEventListener(webviewclosed). About to send settings to the phone");
-      Pebble.sendAppMessage(app_message_json,
-        function(e) {
-          //console.log ("\n++++ I am inside of 'Pebble.addEventListener(webviewclosed) callback' Data sent to phone successfully!");
-        },
-        function(e) {
-          //console.log ("\n++++ I am inside of 'Pebble.addEventListener(webviewclosed) callback' Data sent to phone failed! = " +  JSON.stringify(e));
-        }
-     );
-      
+      setTimeout(function() { // doing timeout to let OG catch on
+          Pebble.sendAppMessage(app_message_json,
+            function(e) {
+              //console.log ("\n++++ I am inside of 'Pebble.addEventListener(webviewclosed) callback' Data sent to phone successfully!");
+            },
+            function(e) {
+              //console.log ("\n++++ I am inside of 'Pebble.addEventListener(webviewclosed) callback' Data sent to phone failed! = " +  JSON.stringify(e));
+            }
+         );
+      }, 2000);    
     }
   }
 );
