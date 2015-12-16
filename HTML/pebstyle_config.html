@@ -5,6 +5,7 @@
     <meta charset="utf-8" />
     <title>Pebstyle config</title>
     <script type="text/javascript" src="slate.min.js"></script>
+    <script type="text/javascript" src="gcolor.js"></script>
     <link type="text/css" rel="stylesheet" href="slate.min.css" />
 
     <style type="text/css">
@@ -20,13 +21,18 @@
             z-index: 1000;
             overflow: auto;
         }
+
+        .nonaplite {
+            display:none;
+        }
+
     </style>
 
 </head>
 <body>
 
     <div class="item-container">
-        <div class="item-container-header">Pebstyle Watchface Options</div>
+        <div class="item-container-header">Bluetooth Options</div>
         <div class="item-container-content">
 
             <label class="item">
@@ -41,13 +47,26 @@
                 </select>
             </label>
 
+            <label class="item" id="xdivbluetoothIcon" style="display:none">
+                Bluetooth Icon
+                <select id="bluetoothIcon" class="item-select">
+                    <option value="0" class="item-select-option">Always Visible</option>
+                    <option value="1" class="item-select-option">Hide Connected</option>
+                    <option value="2" class="item-select-option">Always Hidden</option>
+                </select>
+            </label>
+        </div>
+
+        <div class="item-container-header">Time Options</div>
+        <div class="item-container-content">
+
             <label class="item">
                 Time Separator
                 <select id="timeSeparator" class="item-select">
                     <option value="0" class="item-select-option" selected="selected">Colon</option>
                     <option value="1" class="item-select-option">Dot</option>
                 </select>
-            </label>               
+            </label>
 
             <label class="item">
                 Main Clock
@@ -55,7 +74,7 @@
                     <option value="0" class="item-select-option" selected="selected">Analog</option>
                     <option value="1" class="item-select-option">Digital</option>
                 </select>
-            </label>               
+            </label>
 
             <label class="item" id="xdivSecondHand">
                 Enable Second Hand
@@ -74,6 +93,7 @@
                     <option value="-180" data-timezone="BUE" class="item-select-option">Buenos Aires Time</option>
                     <option value="130" data-timezone="CAI" class="item-select-option">Cairo Time</option>
                     <option value="420" data-timezone="JKT" class="item-select-option">Jakarta Time</option>
+                    <option value="480" data-timezone="HKG" class="item-select-option">Hong Kong Time</option>
                     <option value="0" data-timezone="LON" class="item-select-option">London Time</option>
                     <option value="-480" data-timezone="LAX" class="item-select-option">Los Angeles Time</option>
                     <option value="60" data-timezone="MAD" class="item-select-option">Madrid Time</option>
@@ -90,7 +110,19 @@
 
 
                 </select>
-            </label>           
+            </label>
+
+            <label class="item" id="xdivampmText" style="display:none">
+                Text to replace AM/PM slot
+                <div class="item-input-wrapper item-input-wrapper-button">
+                    <input type="text" id="ampmText" class="item-input" maxlength="14" placeholder="Leave blank for auto" style="color:black">
+                </div>
+            </label>
+
+        </div>
+
+        <div class="item-container-header">Weather Options</div>
+        <div class="item-container-content">
 
             <label class="item">
                 Display Temperature in
@@ -119,7 +151,7 @@
                         </label>
                     </div>
                 </div>
-             </label>
+            </label>
 
             <label class="item" id="xDivWeatherInterval">
                 Weather Update
@@ -130,9 +162,57 @@
                 </select>
             </label>
 
-    </div>
-    </div>
+            </div>
 
+        <div class="item-container-header">Appearance Options</div>
+        <div class="item-container-content">
+
+            <label class="item" id="xDivSidebarLocation" style="display:none">
+                Sidebar location
+                <select id="sidebarLocation" class="item-select">
+                    <option value="0" class="item-select-option" selected="selected">Right</option>
+                    <option value="1" class="item-select-option">Left</option>
+                </select>
+            </label>
+
+            <div class="nonaplite">
+
+                <label class="item">
+                    Color Selection
+                    <select id="colorSelection" class="item-select">
+                        <option value="0" class="item-select-option" selected="selected">Automatic</option>
+                        <option value="1" class="item-select-option">Custom</option>
+                    </select>
+                </label>
+
+                <div id="xDivColorSelection" style="display:none">
+                    <label class="item">
+                        Main BG Color
+                        <input type="text" class="item-color item-color-normal" id="mainBgColor" value="#000000">
+                    </label>
+
+                    <label class="item">
+                        Main Text/Hands Color
+                        <input type="text" class="item-color item-color-normal" id="mainColor" value="#FFFFFF">
+                    </label>
+
+                    <label class="item">
+                        Sidebar BG/Second Hand Color
+                        <input type="text" class="item-color item-color-normal" id="sidebarBgColor" value="#00FF00">
+                    </label>
+
+                    <label class="item">
+                        Sidebar Text Color
+                        <input type="text" class="item-color item-color-normal" id="sidebarColor" value="#000000">
+                    </label>
+                </div>
+
+            </div>
+
+            </div>
+
+        </div>
+    
     <div class="item-container popup" id="xDivWOIDlookup">
         <div class="item-container-header">Location (city/state/country/postal)</div>
         <div class="item-container-content">
@@ -202,7 +282,17 @@
 
         var TIME_SEPARATOR_COLON = 0;
         var TIME_SEPARATOR_DOT = 1;
-  
+
+        var SIDEBAR_LOCATION_RIGHT = 0;
+        var SIDEBAR_LOCATION_LEFT = 1;
+
+        var COLOR_SELECTION_AUTOMATIC = 0;
+        var COLOR_SELECTION_CUSTOM = 1;
+
+        var BLUETOOTH_ICON_ALWAYS_VISIBLE = 0;
+        var BLUETOOTH_ICON_HIDDEN_WHEN_CONNECTED = 1;
+        var BLUETOOTH_ICON_ALWAYS_HIDDEN = 1;
+
 
         var settings;
 
@@ -220,32 +310,40 @@
 
             // loading settings
             try {
-               settings = JSON.parse(localStorage.getItem("pebstyle_settings"));
+                settings = JSON.parse(localStorage.getItem("pebstyle_settings"));
             }
-            catch(err) {
-               settings = null;
+            catch (err) {
+                settings = null;
             }
 
             if (settings == null) {
                 settings = {
                     mainClock: MAIN_CLOCK_ANALOG,
                     bluetoothAlert: BLUETOOTH_ALERT_WEAK,
+                    bluetoothIcon: BLUETOOTH_ICON_ALWAYS_VISIBLE,
                     secondHand: SECOND_HAND_ENABLED,
                     temperatureFormat: TEMPERATURE_FAHRENHEIT,
                     locationService: LOCATION_AUTOMATIC,
                     secondaryInfoType: SECONDARY_INFO_CURRENT_TIME,
-                    timeZoneName:'',
+                    timeZoneName: '',
+                    ampmText:'',
                     woeid: 0,
                     weatherInterval: 60,
-                    timeSeparator: TIME_SEPARATOR_COLON
+                    timeSeparator: TIME_SEPARATOR_COLON,
+                    sidebarLocation: SIDEBAR_LOCATION_RIGHT,
+                    colorSelection: COLOR_SELECTION_AUTOMATIC,
+                    mainBgColor: GColor.Black,
+                    mainColor: GColor.White,
+                    sidebarBgColor: GColor.Black,
+                    sidebarColor: GColor.White
                 };
             }
 
             // setting checkboxes' values
-            $('#secondHand').prop('checked', settings.secondHand == SECOND_HAND_ENABLED? 'checked' : '');
+            $('#secondHand').prop('checked', settings.secondHand == SECOND_HAND_ENABLED ? 'checked' : '');
 
             // setting dropdown values
-            $('#mainClock').val(settings.mainClock);
+            $('#mainClock').val(settings.mainClock? settings.mainClock: MAIN_CLOCK_ANALOG);
 
             //hiding second hand selection for large time
             if (settings.mainClock == MAIN_CLOCK_DIGITAL) {
@@ -253,10 +351,10 @@
                 $('#secondHand').prop('checked', false);
             }
 
-            $('#bluetoothAlert').val(settings.bluetoothAlert);
-            $('#temperatureFormat').val(settings.temperatureFormat);
+            $('#bluetoothAlert').val(settings.bluetoothAlert? settings.bluetoothAlert : BLUETOOTH_ALERT_WEAK);
+            $('#temperatureFormat').val(settings.temperatureFormat? settings.temperatureFormat : TEMPERATURE_FAHRENHEIT);
             $('#locationService').val(settings.locationService ? settings.locationService : 0); // reading location and if manual - setting WOEID as well
-            $('#timeSeparator').val(settings.timeSeparator);
+            $('#timeSeparator').val(settings.timeSeparator? settings.timeSeparator: TIME_SEPARATOR_COLON);
 
             switch (settings.secondaryInfoType) {
                 case SECONDARY_INFO_DISABLED:
@@ -269,7 +367,7 @@
                     break;
             }
 
-            
+
 
             //adjusting weather visuals based on location service type
             switch (settings.locationService) {
@@ -286,14 +384,83 @@
                     break;
             }
 
-
-
-
             $('#weatherInterval').val(settings.weatherInterval ? settings.weatherInterval : 60); // reading update interval and if not set - make it an hour
+
+
+            //if version is equal or above '1.232' - enable these functions
+            if (getURLVariable('version') >= '1.232') {
+
+                //enabling sidebar location
+                $('#xDivSidebarLocation').show();
+                $('#sidebarLocation').val(settings.sidebarLocation ? settings.sidebarLocation : SIDEBAR_LOCATION_RIGHT);
+
+                if (getURLVariable("platform") != "aplite" || getURLVariable('version') >= '1.3') { // enabling color selection on color wacthes or aplite SDK3+ that has grey
+                    $(".nonaplite").css("display", "block");
+
+                    //hiding unavailable colors from aplite
+                    if (getURLVariable("platform") == "aplite") {
+
+                        $("i").filter(function (index) {
+                            return $(this).data("value") != "0xFFFFFF" && $(this).data("value") != "0x000000" && $(this).data("value") != "0xAAAAAA"
+                        }).hide()
+
+                        $("i").filter(function (index) {
+                            return $(this).data("value") == "0xFFFFFF" || $(this).data("value") == "0x000000" || $(this).data("value") == "0xAAAAAA"
+                        }).css("border", "solid 1px black")
+
+                    }
+
+                    $('#colorSelection').val(settings.colorSelection ? settings.colorSelection : COLOR_SELECTION_AUTOMATIC);
+
+                    if (settings.colorSelection == COLOR_SELECTION_CUSTOM) {
+                        $('#xDivColorSelection').show();
+                    }
+
+                    //showing colors
+                    if (settings.mainBgColor) {
+                        $("#mainBgColor ~ div > span").css("background-color", "#" + GColor.toHex(settings.mainBgColor));
+                        $("#mainBgColor").val("0x" + GColor.toHex(settings.mainBgColor));
+
+                        $("#mainColor ~ div > span").css("background-color", "#" + GColor.toHex(settings.mainColor));
+                        $("#mainColor").val("0x" + GColor.toHex(settings.mainColor));
+
+                        $("#sidebarBgColor ~ div > span").css("background-color", "#" + GColor.toHex(settings.sidebarBgColor));
+                        $("#sidebarBgColor").val("0x" + GColor.toHex(settings.sidebarBgColor));
+
+                        $("#sidebarColor ~ div > span").css("background-color", "#" + GColor.toHex(settings.sidebarColor));
+                        $("#sidebarColor").val("0x" + GColor.toHex(settings.sidebarColor));
+                    }
+
+                }
+
+            }
+
+            //if version is equal or above '2.02' - enable these functions
+            if (getURLVariable('version') >= '2.02') {
+
+                //showing custom am/pm text
+                $('#xdivampmText').show();
+                $('#ampmText').val(settings.ampmText ? settings.ampmText : '');
+
+                //showing bluetooth icon visibility
+                if (settings.bluetoothAlert != BLUETOOTH_ALERT_DISABLED) {
+                    $('#xdivbluetoothIcon').show();
+                    $('#bluetoothIcon').val(settings.bluetoothIcon ? settings.bluetoothIcon : BLUETOOTH_ICON_ALWAYS_VISIBLE);
+                }
+
+
+            }
 
 
             //assigning save button
             $('#xbtnSave').click(function () {
+
+                // saving colors
+                settings.mainBgColor = GColor.fromHex($("#mainBgColor").val());
+                settings.mainColor = GColor.fromHex($("#mainColor").val());
+                settings.sidebarBgColor = GColor.fromHex($("#sidebarBgColor").val());
+                settings.sidebarColor = GColor.fromHex($("#sidebarColor").val());
+
 
                 if ($('#locationService').val() == '1') { // if we selected manual location check and save WOEID
                     if ($('#xtxtWOEID').val() == '' || isNaN($('#xtxtWOEID').val())) {
@@ -306,7 +473,9 @@
 
                 var selS = $('#secondaryInfoType').get(0);
                 settings.timeZoneName = selS[selS.selectedIndex].getAttribute('data-timezone');
-                
+
+                settings.ampmText = $('#ampmText').val();
+
                 localStorage.setItem("pebstyle_settings", JSON.stringify(settings));
 
                 var location = (decodeURIComponent(getURLVariable('return_to')) || "pebblejs://close#") + encodeURIComponent(JSON.stringify(settings));
@@ -352,7 +521,6 @@
 
                 }
 
-
                 if (this.id == 'mainClock') {
                     if (this.options[this.selectedIndex].value == MAIN_CLOCK_ANALOG) {
                         $('#xdivSecondHand').show();
@@ -361,6 +529,32 @@
                         $('#xdivSecondHand').hide();
                     }
                 }
+
+
+                // showing colors if custom color selection is selected
+                if (this.id == 'colorSelection') {
+
+                    if (this.options[this.selectedIndex].value == COLOR_SELECTION_CUSTOM) {
+                        $('#xDivColorSelection').show();
+                    } else {
+                        $('#xDivColorSelection').hide();
+                    }
+
+                }
+
+
+                //showing hiding bluetooth icon visibility depending on bluetooth alert type
+                if (this.id == 'bluetoothAlert' && getURLVariable('version') >= '2.02') {
+
+                    if (this.options[this.selectedIndex].value != BLUETOOTH_ALERT_DISABLED) {
+                        $('#xdivbluetoothIcon').show();
+                    } else {
+                        $('#xdivbluetoothIcon').hide();
+                    }
+
+                }
+
+
             })
 
             //showing WHOEID lookup screen
@@ -408,8 +602,9 @@
          data-ad-slot="7086382952"
          data-ad-format="auto"></ins>
     <script>
-            (adsbygoogle = window.adsbygoogle || []).push({});
+        (adsbygoogle = window.adsbygoogle || []).push({});
     </script>
 
 </body>
+
 </html>
