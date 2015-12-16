@@ -1,6 +1,8 @@
 {
     "appKeys": {
+        "KEY_AMPM_TEXT": 21,
         "KEY_BLUETOOTH_ALERT": 2,
+        "KEY_BLUETOOTH_ICON": 20,
         "KEY_CITY_NAME": 9,
         "KEY_COLOR_SELECTION": 15,
         "KEY_JSREADY": 6,
@@ -31,27 +33,19 @@
     "resources": {
         "media": [
             {
-                "file": "images/iconbw.png",
-                "menuIcon": true,
-                "name": "MENU",
-                "type": "png"
-            },
-            {
                 "file": "images/meteocons_Yahoo_Order_V3-25x20px - Basalt Transparent PNG.png",
-                "name": "METEOICONS_BASALT_TRANSPARENT_PNG",
+                "name": "METEOICONS",
                 "targetPlatforms": [
-                    "basalt",
-                    "chalk"
+                    "aplite",
+                    "basalt"
                 ],
-                "type": "png"
+                "type": "bitmap"
             },
             {
-                "file": "images/meteocons_Yahoo_Order_V3-25x20px - Aplite Transparen PNG.png",
-                "name": "METEOICONS_APLITE_TRANSPARENT_PNG",
-                "targetPlatforms": [
-                    "aplite"
-                ],
-                "type": "png-trans"
+                "file": "images/bw_bluetooth-24-connected.png",
+                "name": "BT_CONNECTED",
+                "targetPlatforms": null,
+                "type": "bitmap"
             },
             {
                 "file": "images/bw_bluetooth-24-disconnected.png",
@@ -60,16 +54,13 @@
                     "aplite",
                     "basalt"
                 ],
-                "type": "png"
+                "type": "bitmap"
             },
             {
-                "file": "images/bw_bluetooth-24-connected.png",
-                "name": "BT_CONNECTED",
-                "targetPlatforms": [
-                    "aplite",
-                    "basalt"
-                ],
-                "type": "png"
+                "file": "images/iconbw.png",
+                "menuIcon": true,
+                "name": "MENU",
+                "type": "bitmap"
             },
             {
                 "file": "fonts/Big_Noodle_Titling_Cyr.ttf",
@@ -102,7 +93,7 @@
         "basalt"
     ],
     "uuid": "da05e84d-e2a2-4020-a2dc-9cdcf265fcdd",
-    "versionLabel": "1.232",
+    "versionLabel": "2.02",
     "watchapp": {
         "watchface": true
     }
