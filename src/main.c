@@ -7,7 +7,7 @@ static Layer *s_hands_layer, *s_info_layer;
 static GFont font_18, font_24, font_27, font_90;
 static GBitmap *bluetooth_sprite = NULL;
 
-char s_dow[] = "WED   ";
+char s_dow[] = "WED   "; 
 char s_day[] = "05";
 char s_month[] = "OCT   ";
 char s_battery[] = "100";
