@@ -15,7 +15,7 @@ char s_time[] = "PAR 88:44 PM";
 char s_city_name[25];
 char s_timezone_name[25];
 char s_temp[6];
-char s_ampm_text[14];
+char s_ampm_text[] = "123456789012345678901234567890";
 
 int flag_main_clock, flag_second_hand, flag_bluetooth_alert, flag_locationService, flag_weatherInterval, flag_secondary_info_type;
 int flag_time_separator, flag_js_timezone_offset, flag_sidebar_location, flag_color_selection, flag_bluetooth_icon;
@@ -285,7 +285,13 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
      
      // if custom am/pm text is passed - draw it instead of am/pm
      if (s_ampm_text[0] !='\0') {
-        graphics_draw_text(ctx, s_ampm_text, font_24, GRect(bounds.origin.x,bounds.size.h - (bluetooth_sprite == NULL? 150:130) , bounds.size.w, 30), GTextOverflowModeFill, GTextAlignmentCenter, NULL);       
+         
+         if (strlen(s_ampm_text) > 13) {
+             graphics_draw_text(ctx, s_ampm_text, font_18, GRect(bounds.origin.x,bounds.size.h - (bluetooth_sprite == NULL? 150:140) , bounds.size.w, 30), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);         
+         } else {
+             graphics_draw_text(ctx, s_ampm_text, font_24, GRect(bounds.origin.x,bounds.size.h - (bluetooth_sprite == NULL? 150:130) , bounds.size.w, 30), GTextOverflowModeFill, GTextAlignmentCenter, NULL);         
+         }
+         
      }
      
         
@@ -294,9 +300,6 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
         strcpy(format, "%H:%M"); // e.g "14:46"
      } else {
         strcpy(format, "%l:%M"); // e.g " 2:46" -- with leading space
-       
-        if (flag_time_separator == TIME_SEPARATOR_DOT) format[2] = '.';
-       
          // only draw am/pm if there's no custom am/pm text
          if (s_ampm_text[0] == '\0') {
            strftime(large_ampm, sizeof(large_ampm), "%P", t);
@@ -304,7 +307,8 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
          }  
        
      }
-   
+     
+     if (flag_time_separator == TIME_SEPARATOR_DOT) format[2] = '.';
      strftime(s_time, sizeof(s_time), format, t);
      
      graphics_draw_text(ctx, s_time, font_90, GRect(bounds.origin.x,bounds.origin.y + 55 , bounds.size.w, 70), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL); 
@@ -371,6 +375,8 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
 }
 
 static void handle_second_tick(struct tm *tick_time, TimeUnits units_changed) {
+  
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "TIK-TOK");
  
   if (!(tick_time->tm_min % flag_weatherInterval) && (tick_time->tm_sec == 0)) { // on configured weather interval change - update the weather
         //APP_LOG(//APP_LOG_LEVEL_INFO, "**** I am inside 'tick_handler()' about to call 'update_weather();' at minute %d min on %d interval", tick_time->tm_min, flag_weatherInterval);
