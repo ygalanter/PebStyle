@@ -33,12 +33,17 @@
     "resources": {
         "media": [
             {
+                "file": "data/BigNoodleTitling.ffont",
+                "name": "BIG_NOODLE_FFONT",
+                "targetPlatforms": [
+                    "chalk"
+                ],
+                "type": "raw"
+            },
+            {
                 "file": "images/meteocons_Yahoo_Order_V3-25x20px - Basalt Transparent PNG.png",
                 "name": "METEOICONS",
-                "targetPlatforms": [
-                    "aplite",
-                    "basalt"
-                ],
+                "targetPlatforms": null,
                 "type": "bitmap"
             },
             {
@@ -50,10 +55,7 @@
             {
                 "file": "images/bw_bluetooth-24-disconnected.png",
                 "name": "BT_DISCONNECTED",
-                "targetPlatforms": [
-                    "aplite",
-                    "basalt"
-                ],
+                "targetPlatforms": null,
                 "type": "bitmap"
             },
             {
@@ -63,25 +65,41 @@
                 "type": "bitmap"
             },
             {
+                "characterRegex": "[0-9:.]",
                 "file": "fonts/Big_Noodle_Titling_Cyr.ttf",
-                "name": "BIG_NOODLE_TILTING_24",
-                "type": "font"
-            },
-            {
-                "file": "fonts/Big_Noodle_Titling_Cyr.ttf",
-                "name": "BIG_NOODLE_TILTING_18",
-                "type": "font"
-            },
-            {
-                "characterRegex": "[0-9]",
-                "file": "fonts/Big_Noodle_Titling_Cyr.ttf",
-                "name": "BIG_NOODLE_TILTING_27",
+                "name": "BIG_NOODLE_TILTING_62",
+                "targetPlatforms": [
+                    "chalk"
+                ],
                 "type": "font"
             },
             {
                 "characterRegex": "[0-9:.]",
                 "file": "fonts/Big_Noodle_Titling_Cyr.ttf",
                 "name": "BIG_NOODLE_TILTING_65",
+                "targetPlatforms": [
+                    "aplite",
+                    "basalt"
+                ],
+                "type": "font"
+            },
+            {
+                "characterRegex": "[0-9]",
+                "file": "fonts/Big_Noodle_Titling_Cyr.ttf",
+                "name": "BIG_NOODLE_TILTING_27",
+                "targetPlatforms": null,
+                "type": "font"
+            },
+            {
+                "file": "fonts/Big_Noodle_Titling_Cyr.ttf",
+                "name": "BIG_NOODLE_TILTING_18",
+                "targetPlatforms": null,
+                "type": "font"
+            },
+            {
+                "file": "fonts/Big_Noodle_Titling_Cyr.ttf",
+                "name": "BIG_NOODLE_TILTING_24",
+                "targetPlatforms": null,
                 "type": "font"
             }
         ]
@@ -90,10 +108,11 @@
     "shortName": "Cobblestyle",
     "targetPlatforms": [
         "aplite",
-        "basalt"
+        "basalt",
+        "chalk"
     ],
     "uuid": "da05e84d-e2a2-4020-a2dc-9cdcf265fcdd",
-    "versionLabel": "2.03",
+    "versionLabel": "2.04",
     "watchapp": {
         "watchface": true
     }
