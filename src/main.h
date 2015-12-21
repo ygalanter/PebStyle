@@ -74,9 +74,6 @@
 
 #define KEY_AMPM_TEXT 21
 
-//weather icons
-#define ICON_WIDTH  25
-#define ICON_HEIGHT 20
 
 // bluetooth vibe patterns
 const VibePattern VIBE_PATTERN_WEAK = {

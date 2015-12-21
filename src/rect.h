@@ -7,6 +7,10 @@
 #include "main.h"
 #include "gbitmap_color_palette_manipulator.h"
 
+//weather icons
+#define ICON_WIDTH  25
+#define ICON_HEIGHT 20
+
 static Window *s_window;
 static Layer *s_hands_layer, *s_info_layer;
 static GFont font_18, font_24, font_27, font_90;

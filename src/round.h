@@ -10,6 +10,11 @@
 #include "ffont.h"
 #include "fpath.h"
 
+//weather icons
+#define ICON_WIDTH_ADJUST 1
+#define ICON_WIDTH  24
+#define ICON_HEIGHT 19
+
 
 //**************** RADIAL TEXT STUFF
 static struct Globals {
@@ -168,8 +173,9 @@ static void set_temperature(int w_current) {
 
 //showing weather icon
 static void set_weather_icon(int w_icon) {
+   
    if (meteoicon_current)  gbitmap_destroy(meteoicon_current);
-   meteoicon_current = gbitmap_create_as_sub_bitmap(meteoicons_all, GRect(0, ICON_HEIGHT*w_icon, ICON_WIDTH, ICON_HEIGHT)); 
+   meteoicon_current = gbitmap_create_as_sub_bitmap(meteoicons_all, GRect(ICON_WIDTH_ADJUST, ICON_HEIGHT*w_icon, ICON_WIDTH - ICON_WIDTH_ADJUST, ICON_HEIGHT)); 
    //APP_LOG(//APP_LOG_LEVEL_INFO, "**** I am inside 'set_weather_icon'; Icon IS: %d", w_icon);
    layer_mark_dirty(s_main_layer);
 }
@@ -279,7 +285,7 @@ static void info_update_proc(Layer *layer, GContext *ctx) {
   
   // battery text
   snprintf(s_battery, sizeof(s_battery), "%d", battry_state.charge_percent);  
-  graphics_draw_text(ctx, s_battery, font_18, GRect(bounds.size.w - 29, bounds.size.h/2, 28, 20), GTextOverflowModeFill, GTextAlignmentCenter, NULL);  
+  graphics_draw_text(ctx, s_battery, font_18, GRect(bounds.size.w - 30, bounds.size.h/2, 28, 30), GTextOverflowModeFill, GTextAlignmentCenter, NULL);  
     
     
   }//***************************** displaying battery *****************************  
@@ -288,8 +294,8 @@ static void info_update_proc(Layer *layer, GContext *ctx) {
   if (flag_locationService != LOCATION_DISABLED) {
     
     graphics_context_set_compositing_mode(ctx, GCompOpSet);
-    if (meteoicon_current) graphics_draw_bitmap_in_rect(ctx, meteoicon_current, GRect(bounds.origin.x + 5, bounds.size.h/2 - ICON_HEIGHT - 2, ICON_WIDTH, ICON_HEIGHT));
-    graphics_draw_text(ctx, s_temp, font_18, GRect(bounds.origin.x + 4, bounds.size.h/2 -2, 28, 20), GTextOverflowModeFill, GTextAlignmentCenter, NULL);
+    if (meteoicon_current) graphics_draw_bitmap_in_rect(ctx, meteoicon_current, GRect(bounds.origin.x + 5, bounds.size.h/2 - ICON_HEIGHT - 1, ICON_WIDTH - ICON_WIDTH_ADJUST*2, ICON_HEIGHT));
+    graphics_draw_text(ctx, s_temp, font_18, GRect(bounds.origin.x + 4, bounds.size.h/2 -1, 28, 20), GTextOverflowModeFill, GTextAlignmentCenter, NULL);
     
   }
   }//***************************** displaying weather *****************************
@@ -408,7 +414,7 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
         draw_string_radial(&fctx,
               s_ampm_text,
               g.font,  20,
-              g.center, g.bounds.size.w / 2 - 23, TRIG_MAX_ANGLE, true);
+              g.center, g.bounds.size.w / 2 - 24, TRIG_MAX_ANGLE, true);
         fctx_end_fill(&fctx);
        
                   
@@ -426,7 +432,7 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
         draw_string_radial(&fctx,
               s_city_name,
               g.font,  20,
-              g.center, g.bounds.size.w / 2 - 23, TRIG_MAX_ANGLE, false);
+              g.center, g.bounds.size.w / 2 - 25, TRIG_MAX_ANGLE, false);
         fctx_end_fill(&fctx);
     
         break;
@@ -447,7 +453,7 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
         draw_string_radial(&fctx,
               s_time,
               g.font,  20,
-              g.center, g.bounds.size.w / 2 - 23, TRIG_MAX_ANGLE, false);
+              g.center, g.bounds.size.w / 2 - 25, TRIG_MAX_ANGLE, false);
         fctx_end_fill(&fctx);
     
      
@@ -475,7 +481,7 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
         draw_string_radial(&fctx,
               s_city_name,
               g.font,  20,
-              g.center, g.bounds.size.w / 2 - 23, TRIG_MAX_ANGLE, false);
+              g.center, g.bounds.size.w / 2 - 25, TRIG_MAX_ANGLE, false);
         fctx_end_fill(&fctx);
        
        break;
@@ -511,6 +517,9 @@ static void handle_second_tick(struct tm *tick_time, TimeUnits units_changed) {
   } 
   
   layer_mark_dirty(s_main_layer);
+  
+  // APP_LOG(APP_LOG_LEVEL_DEBUG, "Free heap = %d", (int)heap_bytes_free());
+  
 }
 
 // changes tick inteval to second or minute, depending on flags
