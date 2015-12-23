@@ -1,4 +1,4 @@
-var version = '2.05'; 
+var version = '2.06'; 
 var current_settings;
 
 /*  ****************************************** Weather Section **************************************************** */
@@ -214,7 +214,7 @@ Pebble.addEventListener("webviewclosed",
       if (settings.ampmText === null) 
           {settings.ampmText = '';} 
       else 
-          {settings.ampmText = settings.ampmText.replace(/'/g, "\\'");}
+          {settings.ampmText = settings.ampmText.replace(/'/g, "\u0027");}
       if (settings.timeSeparator === null) settings.timeSeparator = 0;
       if (settings.sidebarLocation === null) settings.sidebarLocation = 0;
       if (settings.colorSelection === null) settings.colorSelection = 0;

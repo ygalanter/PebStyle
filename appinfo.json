@@ -33,18 +33,25 @@
     "resources": {
         "media": [
             {
+                "file": "images/meteocons_Yahoo_Order_V3-25x20px-12-23-2015.png",
+                "name": "METEOICONS",
+                "targetPlatforms": null,
+                "type": "bitmap"
+            },
+            {
+                "file": "images/icon_aplite.png",
+                "menuIcon": true,
+                "name": "MENU",
+                "targetPlatforms": null,
+                "type": "bitmap"
+            },
+            {
                 "file": "data/BigNoodleTitling.ffont",
                 "name": "BIG_NOODLE_FFONT",
                 "targetPlatforms": [
                     "chalk"
                 ],
                 "type": "raw"
-            },
-            {
-                "file": "images/meteocons_Yahoo_Order_V3-25x20px - Basalt Transparent PNG.png",
-                "name": "METEOICONS",
-                "targetPlatforms": null,
-                "type": "bitmap"
             },
             {
                 "file": "images/bw_bluetooth-24-connected.png",
@@ -59,18 +66,22 @@
                 "type": "bitmap"
             },
             {
-                "file": "images/iconbw.png",
-                "menuIcon": true,
-                "name": "MENU",
-                "type": "bitmap"
+                "file": "fonts/Big_Noodle_Titling_Cyr.ttf",
+                "name": "BIG_NOODLE_TILTING_24",
+                "targetPlatforms": null,
+                "type": "font"
             },
             {
-                "characterRegex": "[0-9:.]",
                 "file": "fonts/Big_Noodle_Titling_Cyr.ttf",
-                "name": "BIG_NOODLE_TILTING_62",
-                "targetPlatforms": [
-                    "chalk"
-                ],
+                "name": "BIG_NOODLE_TILTING_18",
+                "targetPlatforms": null,
+                "type": "font"
+            },
+            {
+                "characterRegex": "[0-9]",
+                "file": "fonts/Big_Noodle_Titling_Cyr.ttf",
+                "name": "BIG_NOODLE_TILTING_27",
+                "targetPlatforms": null,
                 "type": "font"
             },
             {
@@ -84,22 +95,12 @@
                 "type": "font"
             },
             {
-                "characterRegex": "[0-9]",
+                "characterRegex": "[0-9:.]",
                 "file": "fonts/Big_Noodle_Titling_Cyr.ttf",
-                "name": "BIG_NOODLE_TILTING_27",
-                "targetPlatforms": null,
-                "type": "font"
-            },
-            {
-                "file": "fonts/Big_Noodle_Titling_Cyr.ttf",
-                "name": "BIG_NOODLE_TILTING_18",
-                "targetPlatforms": null,
-                "type": "font"
-            },
-            {
-                "file": "fonts/Big_Noodle_Titling_Cyr.ttf",
-                "name": "BIG_NOODLE_TILTING_24",
-                "targetPlatforms": null,
+                "name": "BIG_NOODLE_TILTING_56",
+                "targetPlatforms": [
+                    "chalk"
+                ],
                 "type": "font"
             }
         ]
@@ -112,7 +113,7 @@
         "chalk"
     ],
     "uuid": "da05e84d-e2a2-4020-a2dc-9cdcf265fcdd",
-    "versionLabel": "2.05",
+    "versionLabel": "2.06",
     "watchapp": {
         "watchface": true
     }

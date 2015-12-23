@@ -77,6 +77,9 @@ static void set_temperature(int w_current) {
 
 //showing weather icon
 static void set_weather_icon(int w_icon) {
+
+   if (w_icon < 0 || w_icon > 47) {w_icon = 48;}  // in case icon not available - show "N/A" icon
+  
    if (meteoicon_current)  gbitmap_destroy(meteoicon_current);
    meteoicon_current = gbitmap_create_as_sub_bitmap(meteoicons_all, GRect(0, ICON_HEIGHT*w_icon, ICON_WIDTH, ICON_HEIGHT)); 
    //APP_LOG(//APP_LOG_LEVEL_INFO, "**** I am inside 'set_weather_icon'; Icon IS: %d", w_icon);

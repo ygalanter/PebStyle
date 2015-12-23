@@ -779,11 +779,13 @@ void fctx_draw_path(FContext* fctx, FPoint* points, uint32_t num_points) {
 void fctx_draw_commands(FContext* fctx, FPoint advance, void* path_data, uint16_t length) {
 
     fctx_draw_cmd_func func;
-    uint16_t pcount;
-    FPoint initpt = {0, 0};
-    FPoint curpt = {0, 0};
-    FPoint ctrlpt = {0, 0};
-    FPoint ppoints[3];
+  
+    //yg saving stack?
+    static uint16_t pcount;
+    static FPoint initpt = {0, 0};
+    static FPoint curpt = {0, 0};
+    static FPoint ctrlpt = {0, 0};
+    static FPoint ppoints[3];
 
     void* path_data_end = path_data + length;
     while (path_data < path_data_end) {

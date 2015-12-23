@@ -11,9 +11,8 @@
 #include "fpath.h"
 
 //weather icons
-#define ICON_WIDTH_ADJUST 1
-#define ICON_WIDTH  24
-#define ICON_HEIGHT 19
+#define ICON_WIDTH  21
+#define ICON_HEIGHT 17
 
 
 //**************** RADIAL TEXT STUFF
@@ -32,7 +31,16 @@ static struct Globals {
   
 } g;
 
- 
+//moved here to free stack
+fixed_t s;
+fixed_t t;
+const char* p;
+fixed_t arc;
+fixed_t r;
+char ch;
+fixed_t rotation; 
+FGlyph* glyph;
+FContext fctx;
 
 /* TAU = 2*PI * FIXED_POINT_SCALE * TRIG_MAX_ANGLE
    325 is the largest number you can multiply by TAU without overflow.
@@ -49,24 +57,23 @@ uint32_t string_width_radial(
     bool clockwise)
 {
     fctx_set_text_size(fctx, font, font_size);
-    fixed_t s = radius * TAU / TRIG_MAX_ANGLE;
-    fixed_t t = s * fctx->transform_scale_from.x / fctx->transform_scale_to.x;
-    fixed_t arclen = 0;
-    const char* p;
+    s = radius * TAU / TRIG_MAX_ANGLE;
+    t = s * fctx->transform_scale_from.x / fctx->transform_scale_to.x;
+    arc = 0;
     for (p = text; *p; ++p) {
-        char ch = *p;
-        FGlyph* glyph = ffont_glyph_info(font, ch);
+        ch = *p;
+        glyph = ffont_glyph_info(font, ch);
         if (glyph && p!=text) {
-            arclen += glyph->horiz_adv_x * (clockwise? 1 : -1);
+            arc += glyph->horiz_adv_x * (clockwise? 1 : -1);
         }
     }
-    return arclen * TRIG_MAX_ANGLE / t;
+    return arc * TRIG_MAX_ANGLE / t;
 }
 
 
 
 
-int draw_string_radial(
+void draw_string_radial(
     FContext* fctx,
     const char* text,
     FFont* font,
@@ -85,17 +92,16 @@ int draw_string_radial(
     fctx_set_offset(fctx, center);
     fctx_set_rotation(fctx, 0);
 
-    fixed_t s = radius * TAU / TRIG_MAX_ANGLE;
-    fixed_t t = s * fctx->transform_scale_from.x / fctx->transform_scale_to.x;
-    fixed_t r = INT_TO_FIXED(radius) * fctx->transform_scale_from.x / fctx->transform_scale_to.x;
-    fixed_t arc = 0;
-    const char* p;
-    fixed_t rotation = 0; // YG moved here so final angle can be returned
+    s = radius * TAU / TRIG_MAX_ANGLE;
+    t = s * fctx->transform_scale_from.x / fctx->transform_scale_to.x;
+    r = INT_TO_FIXED(radius) * fctx->transform_scale_from.x / fctx->transform_scale_to.x;
+    arc = 0;
+    rotation = 0; // YG moved here so final angle can be returned
 
 
     for (p = text; *p; ++p) {
-        char ch = *p;
-        FGlyph* glyph = ffont_glyph_info(font, ch);
+        ch = *p;
+        glyph = ffont_glyph_info(font, ch);
         if (glyph) {
 
             if (p != text) {
@@ -114,7 +120,7 @@ int draw_string_radial(
         }
     }
   
-  return rotation; //YG returning final angle
+ 
 }
 //**************** RADIAL TEXT STUFF
 
@@ -139,10 +145,12 @@ int flag_main_clock, flag_second_hand, flag_bluetooth_alert, flag_locationServic
 int flag_time_separator, flag_js_timezone_offset, flag_sidebar_location, flag_color_selection, flag_bluetooth_icon;
 GColor flag_main_bg_color, flag_main_color, flag_sidebar_bg_color, flag_sidebar_color;
 bool is_bluetooth_buzz_enabled = false, flag_messaging_is_busy = false, flag_js_is_ready = false;;
+int msg_result;
 
 GBitmap *meteoicons_all, *meteoicon_current;
 GRect top_bound; 
-
+time_t temp;
+struct tm *tm_time;
 
 //calling for weather update
 static void update_weather() {
@@ -159,7 +167,7 @@ static void update_weather() {
     dict_write_tuplet(iter, &dictionary[0]);
     
      flag_messaging_is_busy = true;
-     int msg_result = app_message_outbox_send(); // need to assign result for successfull call
+     msg_result = app_message_outbox_send(); // need to assign result for successfull call
      //APP_LOG(//APP_LOG_LEVEL_INFO, "**** I am inside 'update_weather()' message sent and result code = %d***", msg_result);
   } 
 }
@@ -174,8 +182,10 @@ static void set_temperature(int w_current) {
 //showing weather icon
 static void set_weather_icon(int w_icon) {
    
+   if (w_icon < 0 || w_icon > 47) {w_icon = 48;}  // in case icon not available - show "N/A" icon
+
    if (meteoicon_current)  gbitmap_destroy(meteoicon_current);
-   meteoicon_current = gbitmap_create_as_sub_bitmap(meteoicons_all, GRect(ICON_WIDTH_ADJUST, ICON_HEIGHT*w_icon, ICON_WIDTH - ICON_WIDTH_ADJUST, ICON_HEIGHT)); 
+   meteoicon_current = gbitmap_create_as_sub_bitmap(meteoicons_all, GRect(0, ICON_HEIGHT*w_icon, ICON_WIDTH, ICON_HEIGHT)); 
    //APP_LOG(//APP_LOG_LEVEL_INFO, "**** I am inside 'set_weather_icon'; Icon IS: %d", w_icon);
    layer_mark_dirty(s_main_layer);
 }
@@ -244,48 +254,47 @@ void bluetooth_handler(bool connected) {
 }  
 
 static void info_update_proc(Layer *layer, GContext *ctx) {
-  GRect bounds = layer_get_bounds(layer);
   
   {//***************************** setting background *****************************
   graphics_context_set_fill_color(ctx, flag_main_bg_color);
-  graphics_fill_radial(ctx, bounds, GOvalScaleModeFillCircle, 90, 0, TRIG_MAX_ANGLE);
+  graphics_fill_radial(ctx, top_bound, GOvalScaleModeFillCircle, 90, 0, TRIG_MAX_ANGLE);
     
   graphics_context_set_fill_color(ctx, flag_main_color);
-  graphics_fill_radial(ctx, bounds, GOvalScaleModeFillCircle, 34, 0, TRIG_MAX_ANGLE);
+  graphics_fill_radial(ctx, top_bound, GOvalScaleModeFillCircle, 34, 0, TRIG_MAX_ANGLE);
   
   graphics_context_set_fill_color(ctx, color_battery_minor);
-  graphics_fill_radial(ctx, bounds, GOvalScaleModeFillCircle, 31, 0, TRIG_MAX_ANGLE);
+  graphics_fill_radial(ctx, top_bound, GOvalScaleModeFillCircle, 31, 0, TRIG_MAX_ANGLE);
     
   graphics_context_set_fill_color(ctx, color_battery_major);
-  graphics_fill_radial(ctx, bounds, GOvalScaleModeFillCircle, 29, 0, TRIG_MAX_ANGLE);
+  graphics_fill_radial(ctx, top_bound, GOvalScaleModeFillCircle, 29, 0, TRIG_MAX_ANGLE);
 
   }//***************************** setting background *****************************
   
   {// *************************displaying date ********************
-  time_t temp = time(NULL);
-  struct tm *t = localtime(&temp);
+  temp = time(NULL);
+  tm_time = localtime(&temp);
   
   graphics_context_set_text_color(ctx, flag_main_color);
-  strftime(s_date, sizeof(s_date), "%a %d %b", t);
-  graphics_draw_text(ctx, s_date, font_18, GRect(bounds.size.w/2 - 50 ,bounds.size.h/2 + 25, 100, 20), GTextOverflowModeFill, GTextAlignmentCenter, NULL); 
+  strftime(s_date, sizeof(s_date), "%a %d %b", tm_time);
+  graphics_draw_text(ctx, s_date, font_18, GRect(top_bound.size.w/2 - 50 ,top_bound.size.h/2 + 20, 100, 20), GTextOverflowModeFill, GTextAlignmentCenter, NULL); 
   
   }//************************* displaying date ********************
   
   {//***************************** displaying battery *****************************
   graphics_context_set_text_color(ctx, flag_sidebar_color);  
   graphics_context_set_fill_color(ctx, flag_sidebar_color);
-  graphics_fill_rect(ctx, GRect(bounds.size.w - 26, bounds.size.h/2 - 13, 20, 13), 1, GCornersAll);
+  graphics_fill_rect(ctx, GRect(top_bound.size.w - 26, top_bound.size.h/2 - 12, 20, 12), 1, GCornersAll);
   
   graphics_context_set_fill_color(ctx, color_battery_major);
-  graphics_fill_rect(ctx, GRect(bounds.size.w - 26 + 2, bounds.size.h/2 - 13 + 1, 20 - 4, 13 - 2), 0, GCornerNone);  
+  graphics_fill_rect(ctx, GRect(top_bound.size.w - 26 + 2, top_bound.size.h/2 - 12 + 1, 20 - 4, 12 - 2), 0, GCornerNone);  
     
   BatteryChargeState battry_state = battery_state_service_peek();
   graphics_context_set_fill_color(ctx, flag_sidebar_color);
-  graphics_fill_rect(ctx, GRect(bounds.size.w - 26 + 2 + 1, bounds.size.h/2 - 13 + 1 + 1, (20 - 4 - 2) * battry_state.charge_percent /100, 13 - 2 - 2), 0, GCornerNone);    
+  graphics_fill_rect(ctx, GRect(top_bound.size.w - 26 + 2 + 1, top_bound.size.h/2 - 12 + 1 + 1, (20 - 4 - 2) * battry_state.charge_percent /100, 12 - 2 - 2), 0, GCornerNone);    
   
   // battery text
   snprintf(s_battery, sizeof(s_battery), "%d", battry_state.charge_percent);  
-  graphics_draw_text(ctx, s_battery, font_18, GRect(bounds.size.w - 30, bounds.size.h/2, 28, 30), GTextOverflowModeFill, GTextAlignmentCenter, NULL);  
+  graphics_draw_text(ctx, s_battery, font_18, GRect(top_bound.size.w - 30, top_bound.size.h/2 - 1, 28, 30), GTextOverflowModeFill, GTextAlignmentCenter, NULL);  
     
     
   }//***************************** displaying battery *****************************  
@@ -294,8 +303,8 @@ static void info_update_proc(Layer *layer, GContext *ctx) {
   if (flag_locationService != LOCATION_DISABLED) {
     
     graphics_context_set_compositing_mode(ctx, GCompOpSet);
-    if (meteoicon_current) graphics_draw_bitmap_in_rect(ctx, meteoicon_current, GRect(bounds.origin.x + 5, bounds.size.h/2 - ICON_HEIGHT - 1, ICON_WIDTH - ICON_WIDTH_ADJUST*2, ICON_HEIGHT));
-    graphics_draw_text(ctx, s_temp, font_18, GRect(bounds.origin.x + 4, bounds.size.h/2 -1, 28, 20), GTextOverflowModeFill, GTextAlignmentCenter, NULL);
+    if (meteoicon_current) graphics_draw_bitmap_in_rect(ctx, meteoicon_current, GRect(top_bound.origin.x + 7, top_bound.size.h/2 - ICON_HEIGHT + 1, ICON_WIDTH, ICON_HEIGHT));
+    graphics_draw_text(ctx, s_temp, font_18, GRect(top_bound.origin.x + 4, top_bound.size.h/2, 28, 20), GTextOverflowModeFill, GTextAlignmentCenter, NULL);
     
   }
   }//***************************** displaying weather *****************************
@@ -304,23 +313,28 @@ static void info_update_proc(Layer *layer, GContext *ctx) {
 }  
 
 static void hands_update_proc(Layer *layer, GContext *ctx) {
-  GRect bounds = layer_get_bounds(layer);
-  GPoint center = grect_center_point(&bounds);
+  GPoint center = grect_center_point(&top_bound);
   
-  const int16_t max_hand_length = bounds.size.w / 2 - 43;
+   {//************************ drawing bluetooth **************************** 
+  if (bluetooth_sprite != NULL) {
+    graphics_context_set_compositing_mode(ctx, GCompOpSet);
+    graphics_draw_bitmap_in_rect(ctx, bluetooth_sprite, GRect(top_bound.size.w/2 - 8, 43, 16, 22));
+  }  
+  }//************************ drawing bluetooth ****************************   
   
-  FContext fctx;
+  const int16_t max_hand_length = top_bound.size.w / 2 - 43;
+  
   fctx_init_context(&fctx, ctx);
   fctx_set_color_bias(&fctx, 0);
   
-  time_t now = time(NULL);
-  struct tm *t = localtime(&now);
+  temp = time(NULL);
+  tm_time = localtime(&temp);
   
   if (flag_main_clock == MAIN_CLOCK_ANALOG) { // only displaying analog time if large digial is not enabled
   {//************************ drawing hands ****************************
   
     // ******************* hour hand
-    int32_t angle = (TRIG_MAX_ANGLE * (((t->tm_hour % 12) * 6) + (t->tm_min / 10))) / (12 * 6);
+    int32_t angle = (TRIG_MAX_ANGLE * (((tm_time->tm_hour % 12) * 6) + (tm_time->tm_min / 10))) / (12 * 6);
   
     GPoint hand_endpoint = {
       .x = (int16_t)(sin_lookup(angle) * (int32_t)(max_hand_length-15) / TRIG_MAX_RATIO) + center.x,
@@ -338,7 +352,7 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
     graphics_draw_line(ctx, center, hand_endpoint);
      
     // ******************** minute hand
-    angle = TRIG_MAX_ANGLE * t->tm_min / 60;
+    angle = TRIG_MAX_ANGLE * tm_time->tm_min / 60;
     
     hand_endpoint.x = (int16_t)(sin_lookup(angle) * (int32_t)max_hand_length / TRIG_MAX_RATIO) + center.x;
     hand_endpoint.y = (int16_t)(-cos_lookup(angle) * (int32_t)max_hand_length / TRIG_MAX_RATIO) + center.y;
@@ -357,7 +371,7 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
    
     // ***************** second hand
     if (flag_second_hand == SECOND_HAND_ENABLED) {  
-      angle = TRIG_MAX_ANGLE * t->tm_sec / 60;
+      angle = TRIG_MAX_ANGLE * tm_time->tm_sec / 60;
       
       hand_endpoint.x = (int16_t)(sin_lookup(angle) * (int32_t)max_hand_length / TRIG_MAX_RATIO) + center.x;
       hand_endpoint.y = (int16_t)(-cos_lookup(angle) * (int32_t)max_hand_length / TRIG_MAX_RATIO) + center.y;
@@ -393,14 +407,19 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
         strcpy(format, "%H:%M"); // e.g "14:46"
      } else {
         strcpy(format, "%l:%M"); // e.g " 2:46" -- with leading space
-        strftime(large_ampm, sizeof(large_ampm), "%P", t);
-        graphics_draw_text(ctx, large_ampm, font_18, GRect(bounds.size.w/2 + 15 , bounds.origin.y + 43 , 40, 30), GTextOverflowModeFill, GTextAlignmentLeft, NULL);
+        strftime(large_ampm, sizeof(large_ampm), "%P", tm_time);
+        graphics_draw_text(ctx, large_ampm, font_18, GRect(top_bound.size.w/2 + 12 , top_bound.origin.y + 43 , 40, 30), GTextOverflowModeFill, GTextAlignmentLeft, NULL);
       }
      
      if (flag_time_separator == TIME_SEPARATOR_DOT) format[2] = '.';
-     strftime(s_time, sizeof(s_time), format, t);
+     strftime(s_time, sizeof(s_time), format, tm_time);
+
+     // if time begin with space - eliminate it for even centering
+     if (s_time[0] == ' ') {
+       memcpy(&s_time[0], &s_time[1], strlen(s_time));
+     }
      
-     graphics_draw_text(ctx, s_time, font_90, GRect(bounds.origin.x,bounds.origin.y + 50 , bounds.size.w, 70), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL); 
+     graphics_draw_text(ctx, s_time, font_90, GRect(top_bound.origin.x,top_bound.origin.y + 51 , top_bound.size.w, 70), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL); 
    }
     
    }//************************ drawing large text time ****************************  
@@ -413,11 +432,9 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
         fctx_set_fill_color(&fctx, flag_sidebar_color); 
         draw_string_radial(&fctx,
               s_ampm_text,
-              g.font,  20,
-              g.center, g.bounds.size.w / 2 - 24, TRIG_MAX_ANGLE, true);
+              g.font,  (strlen(s_ampm_text) <=18 ? 22 : 16),
+              g.center, g.bounds.size.w / 2 - (strlen(s_ampm_text) <=14 ? 25 : 23) , TRIG_MAX_ANGLE, true);
         fctx_end_fill(&fctx);
-       
-                  
      }
   
   
@@ -431,8 +448,8 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
         fctx_set_fill_color(&fctx, flag_sidebar_color); 
         draw_string_radial(&fctx,
               s_city_name,
-              g.font,  20,
-              g.center, g.bounds.size.w / 2 - 25, TRIG_MAX_ANGLE, false);
+              g.font,  22,
+              g.center, g.bounds.size.w / 2 - 26, TRIG_MAX_ANGLE, false);
         fctx_end_fill(&fctx);
     
         break;
@@ -446,21 +463,21 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
      
        if (flag_time_separator == TIME_SEPARATOR_DOT) format[2] = '.';
    
-       strftime(s_time, sizeof(s_time), format, t);
+       strftime(s_time, sizeof(s_time), format, tm_time);
      
         fctx_begin_fill(&fctx);
         fctx_set_fill_color(&fctx, flag_sidebar_color); 
         draw_string_radial(&fctx,
               s_time,
-              g.font,  20,
-              g.center, g.bounds.size.w / 2 - 25, TRIG_MAX_ANGLE, false);
+              g.font,  22,
+              g.center, g.bounds.size.w / 2 - 26, TRIG_MAX_ANGLE, false);
         fctx_end_fill(&fctx);
     
      
        break;
      default: // displaying time in different timezone
-       now  += flag_secondary_info_type * 60;
-       t = gmtime(&now);
+       temp  += flag_secondary_info_type * 60;
+       tm_time = gmtime(&temp);
      
        strcpy(s_city_name, s_timezone_name); //prepending with timezone name
        s_city_name[3]=' ';
@@ -474,14 +491,14 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
      
        if (flag_time_separator == TIME_SEPARATOR_DOT) format[2] = '.';
      
-       strftime(&s_city_name[4], sizeof(s_city_name), format, t); //adding timezone time
+       strftime(&s_city_name[4], sizeof(s_city_name), format, tm_time); //adding timezone time
      
         fctx_begin_fill(&fctx);
         fctx_set_fill_color(&fctx, flag_sidebar_color); 
         draw_string_radial(&fctx,
               s_city_name,
-              g.font,  20,
-              g.center, g.bounds.size.w / 2 - 25, TRIG_MAX_ANGLE, false);
+              g.font,  22,
+              g.center, g.bounds.size.w / 2 - 26, TRIG_MAX_ANGLE, false);
         fctx_end_fill(&fctx);
        
        break;
@@ -489,14 +506,6 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
    }
    }//************************ drawing secondary info line ****************************   
    
-  
-  
-  {//************************ drawing bluetooth **************************** 
-  if (bluetooth_sprite != NULL) {
-    graphics_context_set_compositing_mode(ctx, GCompOpSet);
-    graphics_draw_bitmap_in_rect(ctx, bluetooth_sprite, GRect(bounds.size.w/2 - 8, 43, 16, 22));
-  }  
-  }//************************ drawing bluetooth ****************************   
   
   fctx_deinit_context(&fctx);
  
@@ -518,7 +527,7 @@ static void handle_second_tick(struct tm *tick_time, TimeUnits units_changed) {
   
   layer_mark_dirty(s_main_layer);
   
-  // APP_LOG(APP_LOG_LEVEL_DEBUG, "Free heap = %d", (int)heap_bytes_free());
+  // APP_LOG(APP_LOG_LEVEL_DEBUG, "TICK-TOCK: Free heap = %d", (int)heap_bytes_free());
   
 }
 
@@ -803,7 +812,7 @@ static void init() {
   font_18 = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_BIG_NOODLE_TILTING_18));
   font_24 = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_BIG_NOODLE_TILTING_24));
   font_27 = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_BIG_NOODLE_TILTING_27));
-  font_90 = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_BIG_NOODLE_TILTING_62));
+  font_90 = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_BIG_NOODLE_TILTING_56));
   
   s_window = window_create();
   window_set_window_handlers(s_window, (WindowHandlers) {
@@ -908,6 +917,8 @@ static void deinit() {
   fonts_unload_custom_font(font_24);
   fonts_unload_custom_font(font_27);
   fonts_unload_custom_font(font_90);
+  
+  ffont_destroy(g.font);
 }
 
 
