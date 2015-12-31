@@ -453,9 +453,10 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
         fctx_end_fill(&fctx);
     
         break;
+     case SECONDARY_INFO_CURRENT_MILITARY_TIME:
      case SECONDARY_INFO_CURRENT_TIME:
-       // building format 12h/24h
-       if (clock_is_24h_style()) {
+       // building format 12h/24h/military
+       if (clock_is_24h_style() || flag_secondary_info_type == SECONDARY_INFO_CURRENT_MILITARY_TIME) {
           strcpy(format, "%H:%M"); // e.g "14:46"
        } else {
           strcpy(format, "%l:%M %P"); // e.g " 2:46 PM" -- with leading space

@@ -248,8 +248,13 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
       .y = (int16_t)(-cos_lookup(angle) * (int32_t)(max_hand_length-15) / TRIG_MAX_RATIO) + center.y,
     };
     
+    //color under hand
+    graphics_context_set_stroke_color(ctx, flag_main_bg_color);
+    graphics_context_set_stroke_width(ctx, 4);
+    graphics_draw_line(ctx, center, hand_endpoint);
+    
     graphics_context_set_stroke_color(ctx, flag_main_color);
-    graphics_context_set_stroke_width(ctx, 3);
+    graphics_context_set_stroke_width(ctx, 2);
     graphics_draw_line(ctx, center, hand_endpoint);
      
     // ******************** minute hand
@@ -258,8 +263,15 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
     hand_endpoint.x = (int16_t)(sin_lookup(angle) * (int32_t)max_hand_length / TRIG_MAX_RATIO) + center.x;
     hand_endpoint.y = (int16_t)(-cos_lookup(angle) * (int32_t)max_hand_length / TRIG_MAX_RATIO) + center.y;
     
+    //color under hand
+    graphics_context_set_stroke_color(ctx, flag_main_bg_color);
+    graphics_context_set_stroke_width(ctx, 4);
+    graphics_draw_line(ctx, center, hand_endpoint);
+    
+    graphics_context_set_stroke_color(ctx, flag_main_color);
     graphics_context_set_stroke_width(ctx, 2);
     graphics_draw_line(ctx, center, hand_endpoint);
+    
     graphics_context_set_stroke_width(ctx, 1); //resetting for second hand and inner circle
    
     // ***************** second hand
@@ -323,6 +335,11 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
      if (flag_time_separator == TIME_SEPARATOR_DOT) format[2] = '.';
      strftime(s_time, sizeof(s_time), format, t);
      
+      // if time begin with space - eliminate it for even centering
+     if (s_time[0] == ' ') {
+       memcpy(&s_time[0], &s_time[1], strlen(s_time));
+     }
+     
      graphics_draw_text(ctx, s_time, font_90, GRect(bounds.origin.x,bounds.origin.y + 55 , bounds.size.w, 70), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL); 
    }
     
@@ -337,9 +354,10 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
      case SECONDARY_INFO_CURRENT_LOCATION:
        graphics_draw_text(ctx, s_city_name, font_24, GRect(bounds.origin.x,bounds.size.h - 27 , bounds.size.w, 30), GTextOverflowModeFill, GTextAlignmentCenter, NULL);
        break;
+     case SECONDARY_INFO_CURRENT_MILITARY_TIME:
      case SECONDARY_INFO_CURRENT_TIME:
-       // building format 12h/24h
-       if (clock_is_24h_style()) {
+       // building format 12h/24h/military
+       if (clock_is_24h_style() || flag_secondary_info_type == SECONDARY_INFO_CURRENT_MILITARY_TIME) {
           strcpy(format, "%H:%M"); // e.g "14:46"
        } else {
           strcpy(format, "%l:%M %P"); // e.g " 2:46 PM" -- with leading space
