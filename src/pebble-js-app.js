@@ -1,4 +1,4 @@
-var version = '2.10'; 
+var version = '2.11'; 
 var current_settings;
 
 /*  ****************************************** Weather Section **************************************************** */
@@ -53,10 +53,13 @@ function getWeather(woeid) {
 function locationSuccess(pos) {
   // We neeed to get the Yahoo woeid first
   var woeid;
- 
-  
-  var query = 'select * from geo.placefinder where text="' +
-    pos.coords.latitude + ',' + pos.coords.longitude + '" and gflags="R"';
+
+  /* YG 2016-01-25  !!! This query no longer works due to Yahoo bug. Using the one below it !!!  */  
+  // var query = 'select * from geo.placefinder where text="' +
+  //     pos.coords.latitude + ',' + pos.coords.longitude + '" and gflags="R"';
+   var query = 'select woeid from geo.places where text="(' + 
+       pos.coords.latitude + ',' + pos.coords.longitude + ')" limit 1';
+
   //console.log ("\n++++ I am inside of 'locationSuccess()' preparing query:" + query);
   var url = 'https://query.yahooapis.com/v1/public/yql?q=' + encodeURIComponent(query) + '&format=json';
   //console.log ("\n++++ I am inside of 'locationSuccess()' preparing URL: " + url);
@@ -64,7 +67,11 @@ function locationSuccess(pos) {
   var xhr = new XMLHttpRequest();
   xhr.onload = function () {
     var json = JSON.parse(this.responseText);
-    woeid = json.query.results.Result.woeid;
+    
+    /* YG 2016-01-25  !!! This result no longer works due to Yahoo bug. Using the one below it !!!  */  
+    // woeid = json.query.results.Result.woeid;
+    woeid = json.query.results.place.woeid;
+    
     //console.log ("\n++++ I am inside of 'locationSuccess()', woeid received:" + woeid);
     getWeather(woeid);
   };
