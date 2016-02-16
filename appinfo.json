@@ -28,6 +28,7 @@
         "configurable"
     ],
     "companyName": "Yuriy Galanter",
+    "enableMultiJS": false,
     "longName": "Cobblestyle",
     "projectType": "native",
     "resources": {
