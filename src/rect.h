@@ -351,7 +351,8 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
        memcpy(&s_time[0], &s_time[1], strlen(s_time));
      }
      
-     graphics_draw_text(ctx, s_time, font_90, GRect(bounds.origin.x,bounds.origin.y + 55 , bounds.size.w, 70), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL); 
+     // x-2, w+4 to allow for wide "08:08" time
+     graphics_draw_text(ctx, s_time, font_90, GRect(bounds.origin.x-2,bounds.origin.y + 55 , bounds.size.w+4, 70), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL); 
    }
     
    }//************************ drawing large text time ****************************  
