@@ -9,6 +9,7 @@
 #include "fctx.h"
 #include "ffont.h"
 #include "fpath.h"
+#include "health.h"
 
 //weather icons
 #define ICON_WIDTH  21
@@ -136,7 +137,7 @@ char s_date[] = "WED 19 DEC      ";
 
 char s_battery[] = "100";
 char s_time[] = "PAR 88:44 PM";
-char s_city_name[25];
+char s_second_info[25], s_health_info[8];;
 char s_timezone_name[25];
 char s_temp[6];
 char s_ampm_text[] = "123456789012345678901234567890";
@@ -147,10 +148,19 @@ GColor flag_main_bg_color, flag_main_color, flag_sidebar_bg_color, flag_sidebar_
 bool is_bluetooth_buzz_enabled = false, flag_messaging_is_busy = false, flag_js_is_ready = false;;
 int msg_result;
 
-GBitmap *meteoicons_all, *meteoicon_current;
+GBitmap *meteoicons_all, *meteoicon_current, *sneaker;;
 GRect top_bound; 
 time_t temp;
 struct tm *tm_time;
+
+// raised from health.c "health_handler" event handler
+void update_health_info() {
+  if (health_is_available()) {
+      snprintf(s_health_info, sizeof(s_health_info), "%d",  health_get_metric_sum(HealthMetricStepCount));
+  } else {
+      snprintf(s_health_info, sizeof(s_health_info), "N/A");
+  }
+}
 
 //calling for weather update
 static void update_weather() {
@@ -443,11 +453,28 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
    switch (flag_secondary_info_type)  {
      case SECONDARY_INFO_DISABLED:
        break;
+     case SECONDARY_INFO_HEALTH_STEP_COUNTER:
+     
+       if (flag_color_selection == COLOR_SELECTION_CUSTOM) { // in custom color mode colorin bitmaps as well
+          replace_gbitmap_color(GColorBlack, flag_sidebar_color, sneaker, NULL);
+       }
+       graphics_context_set_compositing_mode(ctx, GCompOpSet);
+       graphics_draw_bitmap_in_rect(ctx, sneaker, GRect(top_bound.origin.x + 33, top_bound.size.h/2 + 51, 20, 9)); 
+     
+        fctx_begin_fill(&fctx);
+        fctx_set_fill_color(&fctx, flag_sidebar_color); 
+        draw_string_radial(&fctx,
+              s_health_info,
+              g.font,  22,
+              g.center, g.bounds.size.w / 2 - 26, TRIG_MAX_ANGLE, false);
+        fctx_end_fill(&fctx);
+     
+       break;
      case SECONDARY_INFO_CURRENT_LOCATION:
         fctx_begin_fill(&fctx);
         fctx_set_fill_color(&fctx, flag_sidebar_color); 
         draw_string_radial(&fctx,
-              s_city_name,
+              s_second_info,
               g.font,  22,
               g.center, g.bounds.size.w / 2 - 26, TRIG_MAX_ANGLE, false);
         fctx_end_fill(&fctx);
@@ -480,8 +507,8 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
        temp  += flag_secondary_info_type * 60;
        tm_time = gmtime(&temp);
      
-       strcpy(s_city_name, s_timezone_name); //prepending with timezone name
-       s_city_name[3]=' ';
+       strcpy(s_second_info, s_timezone_name); //prepending with timezone name
+       s_second_info[3]=' ';
        
        // building format 12h/24h
        if (clock_is_24h_style()) {
@@ -492,12 +519,12 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
      
        if (flag_time_separator == TIME_SEPARATOR_DOT) format[2] = '.';
      
-       strftime(&s_city_name[4], sizeof(s_city_name), format, tm_time); //adding timezone time
+       strftime(&s_second_info[4], sizeof(s_second_info), format, tm_time); //adding timezone time
      
         fctx_begin_fill(&fctx);
         fctx_set_fill_color(&fctx, flag_sidebar_color); 
         draw_string_radial(&fctx,
-              s_city_name,
+              s_second_info,
               g.font,  22,
               g.center, g.bounds.size.w / 2 - 26, TRIG_MAX_ANGLE, false);
         fctx_end_fill(&fctx);
@@ -575,8 +602,8 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
         break;
       
       case KEY_CITY_NAME:
-        snprintf(s_city_name, sizeof(s_city_name), "%s", t->value->cstring);  
-        persist_write_string(KEY_CITY_NAME, s_city_name);
+        snprintf(s_second_info, sizeof(s_second_info), "%s", t->value->cstring);  
+        persist_write_string(KEY_CITY_NAME, s_second_info);
         need_rerender = 1;
         break;
       
@@ -654,6 +681,19 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
       
           case KEY_SECONDARY_INFO_TYPE:
                if (flag_secondary_info_type != t->value->int32) {
+                 
+                 //if we enabled health services
+                 if (flag_secondary_info_type != SECONDARY_INFO_HEALTH_STEP_COUNTER && t->value->int32 == SECONDARY_INFO_HEALTH_STEP_COUNTER){
+                   health_init(); // initializig health service
+                   update_health_info(); // showing health info for the first time
+                 }
+                 
+                 //if we disable health services
+                 if (flag_secondary_info_type == SECONDARY_INFO_HEALTH_STEP_COUNTER && t->value->int32 != SECONDARY_INFO_HEALTH_STEP_COUNTER){
+                    health_deinit(); // initializig health service
+                 }
+                 
+                 
                  persist_write_int(KEY_SECONDARY_INFO_TYPE, t->value->int32);
                  flag_secondary_info_type = t->value->int32;
                  need_rerender = 1;
@@ -849,9 +889,15 @@ static void init() {
   flag_time_separator = persist_exists(KEY_TIME_SEPARATOR)? persist_read_int(KEY_TIME_SEPARATOR) : TIME_SEPARATOR_COLON;
   flag_js_timezone_offset = persist_exists(KEY_JS_TIMEZONE_OFFSET)? persist_read_int(KEY_JS_TIMEZONE_OFFSET) : 0;
   flag_sidebar_location = persist_exists(KEY_SIDEBAR_LOCATION)? persist_read_int(KEY_SIDEBAR_LOCATION) : SIDEBAR_LOCATION_RIGHT;
-  persist_exists(KEY_CITY_NAME)? persist_read_string(KEY_CITY_NAME, s_city_name, sizeof(s_city_name)) : snprintf(s_city_name, sizeof(s_city_name), "%s", "");
+  persist_exists(KEY_CITY_NAME)? persist_read_string(KEY_CITY_NAME, s_second_info, sizeof(s_second_info)) : snprintf(s_second_info, sizeof(s_second_info), "%s", "");
   persist_exists(KEY_TIMEZONE_NAME)? persist_read_string(KEY_TIMEZONE_NAME, s_timezone_name, sizeof(s_timezone_name)) : snprintf(s_timezone_name, sizeof(s_timezone_name), "%s", "");
   persist_exists(KEY_AMPM_TEXT)? persist_read_string(KEY_AMPM_TEXT, s_ampm_text, sizeof(s_ampm_text)) : snprintf(s_ampm_text, sizeof(s_ampm_text), "%s", "");
+  
+  // if secondary info is set to health - init health services
+  if (flag_secondary_info_type == SECONDARY_INFO_HEALTH_STEP_COUNTER){
+    health_init(); // initializig health service
+    update_health_info(); // showing health info for the first time
+  }  
   
   //loading custom colors
   
@@ -881,6 +927,10 @@ static void init() {
   bluetooth_connection_service_subscribe(bluetooth_handler);
   bluetooth_handler(bluetooth_connection_service_peek());
   is_bluetooth_buzz_enabled = true;  
+  
+  #ifdef PBL_HEALTH
+    sneaker = gbitmap_create_with_resource(RESOURCE_ID_SNEAKER);
+  #endif
   
   meteoicons_all = gbitmap_create_with_resource(RESOURCE_ID_METEOICONS);
   

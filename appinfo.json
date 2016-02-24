@@ -25,14 +25,24 @@
     },
     "capabilities": [
         "location",
-        "configurable"
+        "configurable",
+        "health"
     ],
     "companyName": "Yuriy Galanter",
-    "enableMultiJS": false,
+    "enableMultiJS": true,
     "longName": "Cobblestyle",
     "projectType": "native",
     "resources": {
         "media": [
+            {
+                "file": "images/sneaker.png",
+                "name": "SNEAKER",
+                "targetPlatforms": [
+                    "basalt",
+                    "chalk"
+                ],
+                "type": "bitmap"
+            },
             {
                 "file": "images/meteocons_Yahoo_Order_V3-25x20px-12-23-2015.png",
                 "name": "METEOICONS",
@@ -114,7 +124,7 @@
         "chalk"
     ],
     "uuid": "da05e84d-e2a2-4020-a2dc-9cdcf265fcdd",
-    "versionLabel": "2.12",
+    "versionLabel": "2.13",
     "watchapp": {
         "watchface": true
     }
