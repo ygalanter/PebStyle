@@ -35,6 +35,13 @@
     "resources": {
         "media": [
             {
+                "file": "images/icon_aplite.png",
+                "menuIcon": true,
+                "name": "MENU",
+                "targetPlatforms": null,
+                "type": "bitmap"
+            },
+            {
                 "file": "images/sneaker.png",
                 "name": "SNEAKER",
                 "targetPlatforms": [
@@ -46,13 +53,6 @@
             {
                 "file": "images/meteocons_Yahoo_Order_V3-25x20px-12-23-2015.png",
                 "name": "METEOICONS",
-                "targetPlatforms": null,
-                "type": "bitmap"
-            },
-            {
-                "file": "images/icon_aplite.png",
-                "menuIcon": true,
-                "name": "MENU",
                 "targetPlatforms": null,
                 "type": "bitmap"
             },
@@ -124,7 +124,7 @@
         "chalk"
     ],
     "uuid": "da05e84d-e2a2-4020-a2dc-9cdcf265fcdd",
-    "versionLabel": "2.14",
+    "versionLabel": "2.17",
     "watchapp": {
         "watchface": true
     }
