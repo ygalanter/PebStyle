@@ -658,10 +658,12 @@
                         if (data.count == 0) { // no results
                             $('#results').append('<div>No Results</div>');
                         } else { //looping thru results
+                            $('#results').append('<div><i>Tap location below to get coordinates</i></div>');
+                            $('#results').append('<hr/>');
                             for (i = 0; i < data.length; i++) {
                                 result = data[i];
                                 $('#results').append('<div onclick = "$(\'#xtxtWOEID\').val(\'' + result.lat + ',' + result.lon + '\');$(\'#xDivWOIDlookup\').hide();">' + 
-                                    (result.display_name.length > 40? result.display_name.substring(0, 37) + '...': result.display_name) +
+                                    (result.display_name.length > 60? result.display_name.substring(0, 57) + '...': result.display_name) +
                                   '</div>');
                             }
                         }
