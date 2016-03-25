@@ -157,13 +157,13 @@
                 </select>
 
                 <div class="item-container" id="xDivWOID" style="display:none">
-                    <div class="item-container-header">Please enter WOEID</div>
+                    <div class="item-container-header" id="woeidTite">Please enter WOEID</div>
                     <div class="item-container-content">
                         <label class="item">
                             <div class="item-input-wrapper item-input-wrapper-button">
-                                <input type="text" id="xtxtWOEID" class="item-input" placeholder="Enter WOEID" style="color:black">
+                                <input type="text" id="xtxtWOEID" class="item-input" style="color:black">
                             </div>
-                            <input type="button" class=" item-button item-input-button" value="LOOKUP" id="xbtnWOEID">
+                            <input type="button" class="item-button item-input-button" value="LOOKUP" id="xbtnWOEID">
                         </label>
                     </div>
                 </div>
@@ -345,7 +345,7 @@
                     secondaryInfoType: SECONDARY_INFO_CURRENT_TIME,
                     timeZoneName: '',
                     ampmText:'',
-                    woeid: 0,
+                    woeid: getURLVariable('version') >= '2.18'? '' : 0,
                     weatherInterval: 60,
                     timeSeparator: TIME_SEPARATOR_COLON,
                     sidebarLocation: SIDEBAR_LOCATION_RIGHT,
@@ -507,12 +507,19 @@
             //after version 2.17 switched to Forecast.IO weather and Nominatim geocoding
             if (getURLVariable('version') >= '2.17') {
 
-                //disabling manual location
-                if ($('#locationService').val() == LOCATION_MANUAL) {
-                    $('#locationService').val(LOCATION_AUTOMATIC);
-                    $('#xDivWOID').hide();
+                if (getURLVariable('version') >= '2.18') {
+                    //renaming woeid
+                    $('#woeidTite').html('Please enter coordinates: lat,long');
+
+                } else {
+                    //disabling manual location
+                    if ($('#locationService').val() == LOCATION_MANUAL) {
+                        $('#locationService').val(LOCATION_AUTOMATIC);
+                        $('#xDivWOID').hide();
+                    }
+                    $('#manual').hide();
                 }
-                $('#manual').hide();
+
 
                 //showing input box for Forecast IO API Key
                 $('#lblForecastIoApiKey').show();
@@ -533,13 +540,14 @@
 
 
                 if ($('#locationService').val() == '1') { // if we selected manual location check and save WOEID
-                    if ($('#xtxtWOEID').val() == '' || isNaN($('#xtxtWOEID').val())) {
-                        alert('Please enter correct WOEID');
+                    if ($('#xtxtWOEID').val() == '') {
+                        if (getURLVariable('version') >= '2.18') alert('Please enter coordinates');
+                        else alert('Please enter WOEID');
                         return;
                     }
                 }
 
-                settings.woeid = parseInt($('#xtxtWOEID').val());
+                settings.woeid = getURLVariable('version') >= '2.18'? $('#xtxtWOEID').val() : parseInt($('#xtxtWOEID').val());
                 settings.forecastIoApiKey = $('#xtxtForecastIoApiKey').val();
 
                 var selS = $('#secondaryInfoType').get(0);
@@ -642,21 +650,45 @@
                 e.preventDefault();
                 $('#results').children().remove();
 
-                $.getJSON('http://query.yahooapis.com/v1/public/yql', { 'q': 'select * from geo.places where text="' + $('#xtxtAddress').val() + '"', 'format': 'json' }, function (data) {
-                    console.log(data);
 
-                    if (data.query.count == 0) { // no results
-                        $('#results').append('<div>No Results</div>');
-                    } else if (data.query.count == 1) { // single result
-                        result = data.query.results.place;
-                        $('#results').append('<div onclick = "$(\'#xtxtWOEID\').val(' + result.woeid + ');$(\'#xDivWOIDlookup\').hide();">' + result.name + ', ' + result.admin1.content + ' (' + result.admin1.code + ') WOEID: <span style="font-weight:bold">' + result.woeid + '</span></div>');
-                    } else { // no results
-                        for (i = 0; i < data.query.count; i++) {
-                            result = data.query.results.place[i];
-                            $('#results').append('<div onclick = "$(\'#xtxtWOEID\').val(' + result.woeid + ');$(\'#xDivWOIDlookup\').hide();">' + result.name + ', ' + result.admin1.content + ' (' + result.admin1.code + ') WOEID: <span style="font-weight:bold">' + result.woeid + '</span></div>');
+                if (getURLVariable('version') >= '2.18') { //for this version and after use lat,long lookup for forecast.io 
+
+                    $.getJSON('http://nominatim.openstreetmap.org/search?q=' + $('#xtxtAddress').val() + '&format=json', function (data) {
+
+                        if (data.count == 0) { // no results
+                            $('#results').append('<div>No Results</div>');
+                        } else { //looping thru results
+                            for (i = 0; i < data.length; i++) {
+                                result = data[i];
+                                $('#results').append('<div onclick = "$(\'#xtxtWOEID\').val(\'' + result.lat + ',' + result.lon + '\');$(\'#xDivWOIDlookup\').hide();">' + 
+                                    (result.display_name.length > 40? result.display_name.substring(0, 37) + '...': result.display_name) +
+                                  '</div>');
+                            }
                         }
-                    }
-                })
+                    })
+
+
+
+
+
+                } else { // otherwise use original Yahoo lookup
+
+                    $.getJSON('http://query.yahooapis.com/v1/public/yql', { 'q': 'select * from geo.places where text="' + $('#xtxtAddress').val() + '"', 'format': 'json' }, function (data) {
+                        console.log(data);
+
+                        if (data.query.count == 0) { // no results
+                            $('#results').append('<div>No Results</div>');
+                        } else if (data.query.count == 1) { // single result
+                            result = data.query.results.place;
+                            $('#results').append('<div onclick = "$(\'#xtxtWOEID\').val(' + result.woeid + ');$(\'#xDivWOIDlookup\').hide();">' + result.name + ', ' + result.admin1.content + ' (' + result.admin1.code + ') WOEID: <span style="font-weight:bold">' + result.woeid + '</span></div>');
+                        } else { // no results
+                            for (i = 0; i < data.query.count; i++) {
+                                result = data.query.results.place[i];
+                                $('#results').append('<div onclick = "$(\'#xtxtWOEID\').val(' + result.woeid + ');$(\'#xDivWOIDlookup\').hide();">' + result.name + ', ' + result.admin1.content + ' (' + result.admin1.code + ') WOEID: <span style="font-weight:bold">' + result.woeid + '</span></div>');
+                            }
+                        }
+                    })
+                }
 
             })
 
