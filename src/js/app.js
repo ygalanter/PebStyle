@@ -1,4 +1,4 @@
-var version = '2.17'; 
+var version = '2.19'; 
 var current_settings;
 
 /*  ****************************************** Weather Section **************************************************** */
@@ -54,10 +54,10 @@ function getWeather(coords /*woeid*/ ) {
   
   var temperature;
   var icon;
-  var city;
+  var city='N/A';
   
   //* var query = 'select item.condition from weather.forecast where woeid =  ' + woeid + ' and u="' + (current_settings.temperatureFormat === 0? 'f' : 'c') + '"';
-  //console.log ("++++ I am inside of 'getWeather()' preparing query:" + query);
+  ////console.log ("++++ I am inside of 'getWeather()' preparing query:" + query);
   
   //* var url = 'https://query.yahooapis.com/v1/public/yql?q=' + encodeURIComponent(query) + '&format=json&env=store://datatables.org/alltableswithkeys';
   var url = 'https://api.forecast.io/forecast/' + current_settings.forecastIoApiKey + '/' + coords + '?exclude=minutely,hourly,daily,alerts,flags&units=' + (current_settings.temperatureFormat === 0? 'us' : 'si');
@@ -81,39 +81,86 @@ function getWeather(coords /*woeid*/ ) {
    
     
     // ********************* Reteiving location name *********************
-    var latlong = coords.split(",");
-    url = 'http://nominatim.openstreetmap.org/reverse?lat=' + latlong[0] + '&lon=' + latlong[1] + '&format=json';
-    //console.log ("++++ I am preparing url to get city:" + url);
+    try {
+        var latlong = coords.split(",");
+        url = 'http://nominatim.openstreetmap.org/reverse?lat=' + latlong[0] + '&lon=' + latlong[1] + '&format=json&accept-language=en-US';
+        //console.log ("++++ I am preparing url to get city:" + url);
+        
+        var xhr_city = new XMLHttpRequest(); //creaing new XHR object
+        xhr_city.onload = function () {
+          
+          try {
+          
+            //console.log  ("++++ I am getting city name. responseText is " + this.responseText);
+            json = JSON.parse(this.responseText);
+          
+          
+                 if (json.address.village) city = json.address.village;
+            else if (json.address.town) city = json.address.town;
+            else if (json.address.city) city = json.address.city;
+            else if (json.address.county) city = json.address.county;
+            else if (json.address.state) city = json.address.state;
+            else if (json.address.country) city = json.address.country;
+            else if (json.address.road) city = json.address.road;
+            else city = 'Location N/A';
+          } catch (e) {
+            
+            //console.log  ("++++ Error getting city name (catch internal): " + e.message);
+            city = 'Location Int Err';
+            
+          }
     
-    xhr.onload = function () {
+        // *** main send-to-pebble after successful city name retreival  
+        var dictionary = {
+          'KEY_WEATHER_CODE': ForecastIoIconToYahooIcon(icon),
+          'KEY_WEATHER_TEMP': temperature,
+          'KEY_CITY_NAME': city
+        };
+        
+        // Send to Pebble
+        //console.log  ("\n++++ *** main I am inside of 'getWeather()' callback. About to send message to Pebble");
+        Pebble.sendAppMessage(dictionary,
+        function(e) {
+          //console.log ("\n++++ *** main I am inside of 'Pebble.sendAppMessage()' callback. Weather info sent to Pebble successfully!");
+        },
+        function(e) {
+          //console.log ("\n++++ *** mainI am inside of 'Pebble.sendAppMessage()' callback. Error sending weather info to Pebble! = " + JSON.stringify(e));
+        }
+        );
+          
+        };
+        xhr_city.open('GET', url);
       
-      //console.log  ("++++ I am getting city name. responseText is " + this.responseText);
-      json = JSON.parse(this.responseText);
+        //WORKS ON iOS ONLY! YG 2016-03-29: need to set custom header to avoid blocking of iPhone Pebble App
+        try {xhr_city.setRequestHeader("User-Agent", "Cobblestyle Pebble Watchface v" + version);} catch(e){}
       
-      if (json.address.village) city = json.address.village;
-      else if (json.address.town) city = json.address.town;
-      else if (json.address.city) city = json.address.city;
-
-    var dictionary = {
-      'KEY_WEATHER_CODE': ForecastIoIconToYahooIcon(icon),
-      'KEY_WEATHER_TEMP': temperature,
-      'KEY_CITY_NAME': city
-    };
-    
-    // Send to Pebble
-    //console.log  ("\n++++ I am inside of 'getWeather()' callback. About to send message to Pebble");
-    Pebble.sendAppMessage(dictionary,
-    function(e) {
-      //console.log ("\n++++ I am inside of 'Pebble.sendAppMessage()' callback. Weather info sent to Pebble successfully!");
-    },
-    function(e) {
-      //console.log ("\n++++ I am inside of 'Pebble.sendAppMessage()' callback. Error sending weather info to Pebble! = " + JSON.stringify(e));
+        xhr_city.send();
     }
-    );
+   
+    catch (e) {
       
-    };
-    xhr.open('GET', url);
-    xhr.send();
+        city = 'Location Ext Err'; 
+        //console.log  ("++++ Error getting city name (catch external): " + e.message);
+      
+        // *** backup send-to-pebble in case city name retreival fail
+        var dictionary = {
+          'KEY_WEATHER_CODE': ForecastIoIconToYahooIcon(icon),
+          'KEY_WEATHER_TEMP': temperature,
+          'KEY_CITY_NAME': city
+        };
+        
+        // Send to Pebble
+        //console.log  ("\n++++ ***aux I am inside of 'getWeather()' callback. About to send message to Pebble");
+        Pebble.sendAppMessage(dictionary,
+        function(e) {
+          //console.log ("\n++++ ***aux I am inside of 'Pebble.sendAppMessage()' callback. Weather info sent to Pebble successfully!");
+        },
+        function(e) {
+          //console.log ("\n++++ ***aux I am inside of 'Pebble.sendAppMessage()' callback. Error sending weather info to Pebble! = " + JSON.stringify(e));
+        }
+        );
+      
+    }
     
     
   };
@@ -154,6 +201,7 @@ function locationSuccess(pos) {
   
    // requestion weather from forecast.io
    getWeather(pos.coords.latitude + ',' + pos.coords.longitude);
+   //console.log ("\n++++ I am inside of 'locationSuccess, coords: " + pos.coords.latitude + ',' + pos.coords.longitude);
 
 }
 
@@ -194,7 +242,7 @@ Pebble.addEventListener('ready',
              bluetoothIcon: 0,
              secondHand: 1,
              locationService: 0,
-             woeid: 0,
+             woeid: version >= '2.18'? '' : 0,
              secondaryInfoType: 1,
              timeZoneName: '',
              ampmText: '',
@@ -235,10 +283,9 @@ Pebble.addEventListener('appmessage',
     //console.log ("\n++++ I am inside of 'Pebble.addEventListener('appmessage'): AppMessage received");
     
     if (current_settings.locationService == 1) { // for manual location - request weather right away
-        //console.log ("\n++++ I am inside of 'Pebble.addEventListener('appmessage'): Requesting weather by WOEID");
-        // for now manual location is disabled: forecast.io uses automatic
-        //  //console.log ("++++ I am inside of 'Pebble.addEventListener('appmessage'): Requesting weather by WOEID");
-        //  *** getWeather(current_settings.woeid);
+        //***** //console.log ("\n++++ I am inside of 'Pebble.addEventListener('appmessage'): Requesting weather by WOEID");
+        // //console.log ("\n++++ I am inside of 'Pebble.addEventListener('appmessage'): Requesting weather by coords:" + current_settings.woeid);
+        getWeather(current_settings.woeid);
     } else {
        //console.log ("\n++++ I am inside of 'Pebble.addEventListener('appmessage'): Requesting automatic location");
        getLocation();  // for automatic location - get location
@@ -295,7 +342,7 @@ Pebble.addEventListener("webviewclosed",
       if (settings.bluetoothIcon === null) settings.bluetoothIcon = 0;
       if (settings.secondHand === null) settings.secondHand = 1;
       if (settings.locationService === null) settings.locationService = 0;
-      if (settings.woeid === null) settings.woeid =  0;
+      if (settings.woeid === null) settings.woeid = version >= '2.18'? '' : 0;
       if (settings.secondaryInfoType === null) settings.secndaryInfoType = 1;
       if (settings.timeZoneName === null) settings.timeZoneName = '';
       if (settings.ampmText === null) 
@@ -333,8 +380,10 @@ Pebble.addEventListener("webviewclosed",
             
       // only storing and passing to pebble temperature format if it changed, because it will cause Pebble to reissue weather AJAX
       // (or if forecast.io API Key was set/changed - then we need to update weather as well)
+      // (or if coordinates (former woeid) changed - then we need to update weather as well)
       if (current_settings.temperatureFormat != settings.temperatureFormat||
-          current_settings.forecastIoApiKey != settings.forecastIoApiKey) {
+          current_settings.forecastIoApiKey != settings.forecastIoApiKey ||
+          current_settings.woeid != settings.woeid) {
         app_message_json.KEY_TEMPERATURE_FORMAT = settings.temperatureFormat;
       }
       
