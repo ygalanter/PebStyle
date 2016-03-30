@@ -1,4 +1,4 @@
-var version = '2.19'; 
+var version = '2.20'; 
 var current_settings;
 
 /*  ****************************************** Weather Section **************************************************** */
@@ -94,14 +94,14 @@ function getWeather(coords /*woeid*/ ) {
             //console.log  ("++++ I am getting city name. responseText is " + this.responseText);
             json = JSON.parse(this.responseText);
           
-          
-                 if (json.address.village) city = json.address.village;
+                 if (json.address.road) city = json.address.road;
+            else if (json.address.hamlet) city = json.address.hamlet;
+            else if (json.address.village) city = json.address.village;
             else if (json.address.town) city = json.address.town;
             else if (json.address.city) city = json.address.city;
             else if (json.address.county) city = json.address.county;
             else if (json.address.state) city = json.address.state;
             else if (json.address.country) city = json.address.country;
-            else if (json.address.road) city = json.address.road;
             else city = 'Location N/A';
           } catch (e) {
             
@@ -301,7 +301,7 @@ Pebble.addEventListener("showConfiguration",
   function(e) {
     
     //getting platform
-    var platform;
+    var platform = '';
     if(Pebble.getActiveWatchInfo) {
       // Available for use!
       platform = Pebble.getActiveWatchInfo().platform;
@@ -309,7 +309,10 @@ Pebble.addEventListener("showConfiguration",
       // Not available, handle gracefully
       platform = 'aplite';
     }
-   
+    
+    //precaution
+    if (platform === null || platform === '') platform = 'aplite';
+    
     //Load the remote config page
     Pebble.openURL("http://ygalanter.github.io/configs/cobblestyle/pebstyle_config.html?version=" + version + "&platform=" + platform);
     
