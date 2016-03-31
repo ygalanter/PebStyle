@@ -373,8 +373,16 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
      
        graphics_draw_text(ctx, s_health_info, font_24, GRect(bounds.origin.x,bounds.size.h - 27 , bounds.size.w, 30), GTextOverflowModeFill, GTextAlignmentCenter, NULL);
        break;
-     case SECONDARY_INFO_CURRENT_LOCATION:
-       graphics_draw_text(ctx, s_second_info, font_24, GRect(bounds.origin.x,bounds.size.h - 27 , bounds.size.w, 30), GTextOverflowModeFill, GTextAlignmentCenter, NULL);
+     case SECONDARY_INFO_CURRENT_LOCATION_STREET_LEVEL:
+     case SECONDARY_INFO_CURRENT_LOCATION_TOWN_LEVEL:
+     case SECONDARY_INFO_CURRENT_LOCATION_COUNTRY_LEVEL:
+     
+      if (strlen(s_second_info) > 13) {
+        graphics_draw_text(ctx, s_second_info, font_18, GRect(bounds.origin.x,bounds.size.h - 23 , bounds.size.w, 30), GTextOverflowModeFill, GTextAlignmentCenter, NULL);
+      } else {
+        graphics_draw_text(ctx, s_second_info, font_24, GRect(bounds.origin.x,bounds.size.h - 27 , bounds.size.w, 30), GTextOverflowModeFill, GTextAlignmentCenter, NULL);       
+      } 
+     
        break;
      case SECONDARY_INFO_CURRENT_MILITARY_TIME:
      case SECONDARY_INFO_CURRENT_TIME:
@@ -569,6 +577,11 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
                  //if we disable health services
                  if (flag_secondary_info_type == SECONDARY_INFO_HEALTH_STEP_COUNTER && t->value->int32 != SECONDARY_INFO_HEALTH_STEP_COUNTER){
                     health_deinit(); // initializig health service
+                 }
+                 
+                 //if we change location display type - need to bring new location name (via weather call)
+                 if (t->value->int32 == SECONDARY_INFO_CURRENT_LOCATION_STREET_LEVEL || t->value->int32 == SECONDARY_INFO_CURRENT_LOCATION_TOWN_LEVEL || t->value->int32 == SECONDARY_INFO_CURRENT_LOCATION_COUNTRY_LEVEL) {
+                    need_weather = 1;
                  }
                                   
                  persist_write_int(KEY_SECONDARY_INFO_TYPE, t->value->int32);

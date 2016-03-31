@@ -1,5 +1,9 @@
-var version = '2.20'; 
+var version = '2.21'; 
 var current_settings;
+
+var SECONDARY_INFO_CURRENT_LOCATION_STREET_LEVEL = 2;
+var SECONDARY_INFO_CURRENT_LOCATION_TOWN_LEVEL = 6;
+var SECONDARY_INFO_CURRENT_LOCATION_COUNTRY_LEVEL = 7;
 
 /*  ****************************************** Weather Section **************************************************** */
 
@@ -93,15 +97,17 @@ function getWeather(coords /*woeid*/ ) {
           
             //console.log  ("++++ I am getting city name. responseText is " + this.responseText);
             json = JSON.parse(this.responseText);
+            
+            console.log('Secondary Info = ' + current_settings.secondaryInfoType);
           
-                 if (json.address.road) city = json.address.road;
-            else if (json.address.hamlet) city = json.address.hamlet;
-            else if (json.address.village) city = json.address.village;
-            else if (json.address.town) city = json.address.town;
-            else if (json.address.city) city = json.address.city;
-            else if (json.address.county) city = json.address.county;
-            else if (json.address.state) city = json.address.state;
-            else if (json.address.country) city = json.address.country;
+                 if ((json.address.road) && current_settings.secondaryInfoType == SECONDARY_INFO_CURRENT_LOCATION_STREET_LEVEL) city = json.address.road;
+            else if ((json.address.hamlet) && current_settings.secondaryInfoType == SECONDARY_INFO_CURRENT_LOCATION_TOWN_LEVEL) city = json.address.hamlet;
+            else if ((json.address.village) && current_settings.secondaryInfoType == SECONDARY_INFO_CURRENT_LOCATION_TOWN_LEVEL) city = json.address.village;
+            else if ((json.address.town) && current_settings.secondaryInfoType == SECONDARY_INFO_CURRENT_LOCATION_TOWN_LEVEL) city = json.address.town;
+            else if ((json.address.city) && current_settings.secondaryInfoType == SECONDARY_INFO_CURRENT_LOCATION_TOWN_LEVEL) city = json.address.city;
+            else if ((json.address.county) && current_settings.secondaryInfoType == SECONDARY_INFO_CURRENT_LOCATION_COUNTRY_LEVEL) city = json.address.county;
+            else if ((json.address.state) && current_settings.secondaryInfoType == SECONDARY_INFO_CURRENT_LOCATION_COUNTRY_LEVEL) city = json.address.state;
+            else if ((json.address.country) && current_settings.secondaryInfoType == SECONDARY_INFO_CURRENT_LOCATION_COUNTRY_LEVEL) city = json.address.country;
             else city = 'Location N/A';
           } catch (e) {
             
@@ -359,6 +365,8 @@ Pebble.addEventListener("webviewclosed",
       if (settings.mainColor === null) settings.mainColor = 255;
       if (settings.sidebarBgColor === null) settings.sidebarBgColor = 254;
       if (settings.sidebarColor === null) settings.sidebarColo = 192;
+      
+      console.log('Secondary Info after WebView = ' + settings.secondaryInfoType);
 
 
       // preparing app message

@@ -470,7 +470,9 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
         fctx_end_fill(&fctx);
      
        break;
-     case SECONDARY_INFO_CURRENT_LOCATION:
+     case SECONDARY_INFO_CURRENT_LOCATION_STREET_LEVEL:
+     case SECONDARY_INFO_CURRENT_LOCATION_TOWN_LEVEL:
+     case SECONDARY_INFO_CURRENT_LOCATION_COUNTRY_LEVEL:
         fctx_begin_fill(&fctx);
         fctx_set_fill_color(&fctx, flag_sidebar_color); 
         draw_string_radial(&fctx,
@@ -691,6 +693,11 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
                  //if we disable health services
                  if (flag_secondary_info_type == SECONDARY_INFO_HEALTH_STEP_COUNTER && t->value->int32 != SECONDARY_INFO_HEALTH_STEP_COUNTER){
                     health_deinit(); // initializig health service
+                 }
+                 
+                 //if we change location display type - need to bring new location name (via weather call)
+                 if (t->value->int32 == SECONDARY_INFO_CURRENT_LOCATION_STREET_LEVEL || t->value->int32 == SECONDARY_INFO_CURRENT_LOCATION_TOWN_LEVEL || t->value->int32 == SECONDARY_INFO_CURRENT_LOCATION_COUNTRY_LEVEL) {
+                    need_weather = 1;
                  }
                  
                  
