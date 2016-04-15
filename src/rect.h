@@ -378,7 +378,7 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
      case SECONDARY_INFO_CURRENT_LOCATION_COUNTRY_LEVEL:
      
       if (strlen(s_second_info) > 13) {
-        graphics_draw_text(ctx, s_second_info, font_18, GRect(bounds.origin.x,bounds.size.h - 23 , bounds.size.w, 30), GTextOverflowModeFill, GTextAlignmentCenter, NULL);
+        graphics_draw_text(ctx, s_second_info, font_18, GRect(bounds.origin.x,bounds.size.h - 23 , bounds.size.w, 40), GTextOverflowModeFill, GTextAlignmentCenter, NULL);
       } else {
         graphics_draw_text(ctx, s_second_info, font_24, GRect(bounds.origin.x,bounds.size.h - 27 , bounds.size.w, 30), GTextOverflowModeFill, GTextAlignmentCenter, NULL);       
       } 

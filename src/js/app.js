@@ -1,4 +1,4 @@
-var version = '2.21'; 
+var version = '2.22'; 
 var current_settings;
 
 var SECONDARY_INFO_CURRENT_LOCATION_STREET_LEVEL = 2;
