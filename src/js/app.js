@@ -7,87 +7,65 @@ var SECONDARY_INFO_CURRENT_LOCATION_COUNTRY_LEVEL = 7;
 
 /*  ****************************************** Weather Section **************************************************** */
 
-// converts forecast.io weather icon code to Yahoo weather icon code (to reuse current bitmap with icon set)
-  var ForecastIoIconToYahooIcon = function(forecsat_io_icon) {
-    var yahoo_icon = 3200; //initialy not defined
-    
-    switch (forecsat_io_icon){
-      case "clear-day":
-        yahoo_icon = 32; // sunny
-        break;
-      case "clear-night":
-        yahoo_icon = 31; // clear night
-        break;
-      case "rain":
-        yahoo_icon = 11; // showers
-        break;
-      case "snow":
-        yahoo_icon = 16; // snow
-        break;
-      case "sleet": 
-        yahoo_icon = 18; // sleet
-        break;
-      case "wind": 
-        yahoo_icon = 24; // windy
-        break;
-      case "fog": 
-        yahoo_icon = 20; // foggy
-        break;
-      case "cloudy":
-        yahoo_icon = 26; // cloudy
-        break;
-      case "partly-cloudy-day":
-        yahoo_icon = 30; // partly cloudy day
-        break;
-      case "partly-cloudy-night":
-        yahoo_icon = 29; // partly cloudy night
-        break;
-    }
-    
-    return yahoo_icon;
-    
-  };
+// converts open-metri weather icon code to Yahoo weather icon code (to reuse current bitmap with icon set)
+var OpenMetroCodeToYahooIcon = function (weather_code, is_day) {
+  var yahoo_icon = 3200; //initially not defined
+
+  console.log(`Weather code = ${weather_code}, is_day = ${is_day}`)
+
+  if (weather_code === 0) {
+    yahoo_icon = is_day === 1 ? 32 : 31; // sunny or clear night
+  } else if ([51, 53, 55, 61, 63, 65, 80, 81, 82, 95, 96, 99].includes(weather_code)) {
+    yahoo_icon = 11; //showers
+  } else if ([71, 73, 75, 77, 85, 86].includes(weather_code)) {
+    yahoo_icon = 16; //snow
+  } else if ([56, 57, 66, 67].includes(weather_code)) {
+    yahoo_icon = 18; //sleet
+  } else if ([45, 48].includes(weather_code)) {
+    yahoo_icon = 20; //foggy
+  } else if (weather_code === 3) {
+    yahoo_icon = 26; //cloudy
+  } else if ([1, 2].includes(weather_code)) {
+    yahoo_icon = is_day === 1 ? 30 : 29; //partly cloudy day or night
+  }
+
+  console.log(`Yahoo-icon = ${yahoo_icon}`)
+
+  return yahoo_icon;
+
+};
 
 //2016-03-25: Updated for Forecast.io
-function getWeather(coords /*woeid*/ ) {  
-  
-      if (current_settings.forecastIoApiKey === '') {
-        //console.log ("\n++++ I am inside of 'getWeather()' API KEY NOT DEFINED");
-        return;
-      }
+function getWeather(coords) {  
   
   var temperature;
-  var icon;
+  var code;
   var city='N/A';
   
-  //* var query = 'select item.condition from weather.forecast where woeid =  ' + woeid + ' and u="' + (current_settings.temperatureFormat === 0? 'f' : 'c') + '"';
-  ////console.log ("++++ I am inside of 'getWeather()' preparing query:" + query);
-  
-  //* var url = 'https://query.yahooapis.com/v1/public/yql?q=' + encodeURIComponent(query) + '&format=json&env=store://datatables.org/alltableswithkeys';
-  var url = 'https://api.forecast.io/forecast/' + current_settings.forecastIoApiKey + '/' + coords + '?exclude=minutely,hourly,daily,alerts,flags&units=' + (current_settings.temperatureFormat === 0? 'us' : 'si');
-  //console.log ("++++ I am inside of 'getWeather()' preparing url:" + url);
-  
-  // ** Send request to Yahoo
-  //Send request to Forecast.io
+  var is_day;
+
+
+  var url = `https://api.open-meteo.com/v1/forecast?latitude=${coords.latitude}&longitude=${coords.longitude}&current=temperature_2m,weather_code,is_day&temperature_unit=${current_settings.temperatureFormat === 0 ? 'fahrenheit' : 'celsius'}`;
+
   var xhr = new XMLHttpRequest();
   xhr.onload = function () {
     
-   //console.log  ("++++ I am inside of 'getWeather()' callback. responseText is " + this.responseText);
-    
+    //console.log  ("++++ I am inside of 'getWeather()' callback. responseText is " + this.responseText);
+
     var json = JSON.parse(this.responseText);
+
+    temperature = json.current.temperature_2m;
+    //console.log("++++ I am inside of 'getWeather()' callback. Temperature is " + temperature);
+
+    code = json.current.weather_code;
+    //console.log("++++ I am inside of 'getWeather()' callback. Icon code: " + code);
+
+    is_day = json.current.is_day;
+    //console.log("++++ I am inside of 'getWeather()' callback. Is day: " + is_day);
     
-    temperature = json.currently.temperature;
-    //console.log  ("++++ I am inside of 'getWeather()' callback. Temperature is " + temperature);
-    
-    icon = json.currently.icon;
-    //console.log  ("++++ I am inside of 'getWeather()' callback. Icon code: " + icon);
-    
-   
-    
-    // ********************* Reteiving location name *********************
+    // ********************* Retrieving location name *********************
     try {
-        var latlong = coords.split(",");
-        url = 'http://nominatim.openstreetmap.org/reverse?lat=' + latlong[0] + '&lon=' + latlong[1] + '&format=json&accept-language=en-US';
+        url = 'https://nominatim.openstreetmap.org/reverse?lat=' + coords.latitude + '&lon=' + coords.longitude+ '&format=json&accept-language=en-US';
         //console.log ("++++ I am preparing url to get city:" + url);
         
         var xhr_city = new XMLHttpRequest(); //creaing new XHR object
@@ -98,27 +76,31 @@ function getWeather(coords /*woeid*/ ) {
             //console.log  ("++++ I am getting city name. responseText is " + this.responseText);
             json = JSON.parse(this.responseText);
             
-            console.log('Secondary Info = ' + current_settings.secondaryInfoType);
-          
-                 if ((json.address.road) && current_settings.secondaryInfoType == SECONDARY_INFO_CURRENT_LOCATION_STREET_LEVEL) city = json.address.road;
-            else if ((json.address.hamlet) && current_settings.secondaryInfoType == SECONDARY_INFO_CURRENT_LOCATION_TOWN_LEVEL) city = json.address.hamlet;
-            else if ((json.address.village) && current_settings.secondaryInfoType == SECONDARY_INFO_CURRENT_LOCATION_TOWN_LEVEL) city = json.address.village;
-            else if ((json.address.town) && current_settings.secondaryInfoType == SECONDARY_INFO_CURRENT_LOCATION_TOWN_LEVEL) city = json.address.town;
-            else if ((json.address.city) && current_settings.secondaryInfoType == SECONDARY_INFO_CURRENT_LOCATION_TOWN_LEVEL) city = json.address.city;
-            else if ((json.address.county) && current_settings.secondaryInfoType == SECONDARY_INFO_CURRENT_LOCATION_COUNTRY_LEVEL) city = json.address.county;
-            else if ((json.address.state) && current_settings.secondaryInfoType == SECONDARY_INFO_CURRENT_LOCATION_COUNTRY_LEVEL) city = json.address.state;
-            else if ((json.address.country) && current_settings.secondaryInfoType == SECONDARY_INFO_CURRENT_LOCATION_COUNTRY_LEVEL) city = json.address.country;
-            else city = 'Location N/A';
+            //console.log('Secondary Info = ' + current_settings.secondaryInfoType);
+            switch (current_settings.secondaryInfoType) {
+              case SECONDARY_INFO_CURRENT_LOCATION_STREET_LEVEL:
+                city = json.address.road;
+                break;
+              case SECONDARY_INFO_CURRENT_LOCATION_TOWN_LEVEL:
+                city = json.address.city || json.address.town || json.address.village || json.address.hamlet;
+                break;
+              case SECONDARY_INFO_CURRENT_LOCATION_COUNTRY_LEVEL:
+                city = json.address.country || json.address.state || json.address.county;
+                break;
+              default:
+                city = 'Location N/A';
+            }
           } catch (e) {
-            
-            //console.log  ("++++ Error getting city name (catch internal): " + e.message);
             city = 'Location Int Err';
-            
+            //console.log  ("++++ Error getting city name (catch internal): " + e.message);
           }
+
+            
+
     
         // *** main send-to-pebble after successful city name retreival  
         var dictionary = {
-          'KEY_WEATHER_CODE': ForecastIoIconToYahooIcon(icon),
+          'KEY_WEATHER_CODE': OpenMetroCodeToYahooIcon(code, is_day),
           'KEY_WEATHER_TEMP': temperature,
           'KEY_CITY_NAME': city
         };
@@ -150,7 +132,7 @@ function getWeather(coords /*woeid*/ ) {
       
         // *** backup send-to-pebble in case city name retreival fail
         var dictionary = {
-          'KEY_WEATHER_CODE': ForecastIoIconToYahooIcon(icon),
+          'KEY_WEATHER_CODE': OpenMetroCodeToYahooIcon(code, is_day),
           'KEY_WEATHER_TEMP': temperature,
           'KEY_CITY_NAME': city
         };
@@ -178,35 +160,9 @@ function getWeather(coords /*woeid*/ ) {
 
 // on location success querying woeid and getting weather
 function locationSuccess(pos) {
-//       // We neeed to get the Yahoo woeid first
-//       var woeid;
-    
-//       /* YG 2016-01-25  !!! This query no longer works due to Yahoo bug. Using the one below it !!!  */  
-//       // var query = 'select * from geo.placefinder where text="' +
-//       //     pos.coords.latitude + ',' + pos.coords.longitude + '" and gflags="R"';
-//        var query = 'select locality1 from geo.places where text="(' + 
-//            pos.coords.latitude + ',' + pos.coords.longitude + ')" limit 1';
-    
-//       //console.log ("\n++++ I am inside of 'locationSuccess()' preparing query:" + query);
-//       var url = 'https://query.yahooapis.com/v1/public/yql?q=' + encodeURIComponent(query) + '&format=json';
-//       //console.log ("\n++++ I am inside of 'locationSuccess()' preparing URL: " + url);
-//       // Send request to Yahoo
-//       var xhr = new XMLHttpRequest();
-//       xhr.onload = function () {
-//         var json = JSON.parse(this.responseText);
-        
-//         /* YG 2016-01-25  !!! This result no longer works due to Yahoo bug. Using the one below it !!!  */  
-//         // woeid = json.query.results.Result.woeid;
-//         woeid = json.query.results.place.locality1.woeid;
-        
-//         //console.log ("\n++++ I am inside of 'locationSuccess()', woeid received:" + woeid);
-//         getWeather(woeid);
-//       };
-//       xhr.open('GET', url);
-//       xhr.send();
   
    // requestion weather from forecast.io
-   getWeather(pos.coords.latitude + ',' + pos.coords.longitude);
+   getWeather(pos.coords);
    //console.log ("\n++++ I am inside of 'locationSuccess, coords: " + pos.coords.latitude + ',' + pos.coords.longitude);
 
 }
@@ -289,8 +245,8 @@ Pebble.addEventListener('appmessage',
     //console.log ("\n++++ I am inside of 'Pebble.addEventListener('appmessage'): AppMessage received");
     
     if (current_settings.locationService == 1) { // for manual location - request weather right away
-        //***** //console.log ("\n++++ I am inside of 'Pebble.addEventListener('appmessage'): Requesting weather by WOEID");
-        // //console.log ("\n++++ I am inside of 'Pebble.addEventListener('appmessage'): Requesting weather by coords:" + current_settings.woeid);
+        //console.log ("\n++++ I am inside of 'Pebble.addEventListener('appmessage'): Requesting weather by WOEID");
+        //console.log ("\n++++ I am inside of 'Pebble.addEventListener('appmessage'): Requesting weather by coords:" + current_settings.woeid);
         getWeather(current_settings.woeid);
     } else {
        //console.log ("\n++++ I am inside of 'Pebble.addEventListener('appmessage'): Requesting automatic location");
@@ -366,7 +322,7 @@ Pebble.addEventListener("webviewclosed",
       if (settings.sidebarBgColor === null) settings.sidebarBgColor = 254;
       if (settings.sidebarColor === null) settings.sidebarColo = 192;
       
-      console.log('Secondary Info after WebView = ' + settings.secondaryInfoType);
+      //console.log('Secondary Info after WebView = ' + settings.secondaryInfoType);
 
 
       // preparing app message
